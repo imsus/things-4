@@ -44,6 +44,7 @@ router.listen(() => {
   selectedTaskId = null
   selectedTask = null
   searchQuery = ''
+  console.log('[Router] navigate to', currentPath)
   loadTasksForCurrentView()
   renderApp()
 })
@@ -61,12 +62,15 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 
   if (e.key === 'n' || e.key === 'N') {
     e.preventDefault()
+    console.log('[Keyboard] N pressed → focus new task input')
     const input = document.querySelector('input[placeholder="New task..."]') as HTMLInputElement | null
     if (input) input.focus()
   } else if (e.key === 'Escape') {
+    console.log('[Keyboard] Escape pressed → close detail')
     handleCloseDetail()
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
     if (selectedTaskId) {
+      console.log('[Keyboard] Delete pressed → delete task', selectedTaskId)
       handleDeleteTask()
     }
   }
@@ -75,6 +79,7 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 function loadTasksForCurrentView() {
   const projectId = extractProjectId(currentPath)
   const tagId = extractTagId(currentPath)
+  console.log('[View] load tasks for', currentPath, { projectId, tagId })
 
   if (projectId) {
     liveQuery(() =>
@@ -110,11 +115,13 @@ function loadTasksForCurrentView() {
 
 // Subscribe to projects and tags
 liveQuery(() => db.projects.orderBy('order').toArray()).subscribe(projects => {
+  console.log('[Data] projects updated', projects.length)
   cachedProjects = projects
   renderApp()
 })
 
 liveQuery(() => db.tags.orderBy('order').toArray()).subscribe(tags => {
+  console.log('[Data] tags updated', tags.length)
   cachedTags = tags
   renderApp()
 })
@@ -232,18 +239,21 @@ function renderTaskItem(task: TaskData) {
 }
 
 async function handleTaskClick(id: string) {
+  console.log('[Task] click', id)
   selectedTaskId = id
   selectedTask = (await taskService.getById(id)) ?? null
   renderApp()
 }
 
 function handleCloseDetail() {
+  console.log('[Task] close detail panel')
   selectedTaskId = null
   selectedTask = null
   renderApp()
 }
 
 async function handleNewTask(title: string, projectId: string | null = null) {
+  console.log('[Task] create', { title, projectId })
   await taskService.create(title, projectId)
 }
 
@@ -251,6 +261,7 @@ async function handleToggleComplete(id: string) {
   const task = await taskService.getById(id)
   if (!task) return
   if (task.completedAt) {
+    console.log('[Task] uncomplete', id)
     await taskService.uncomplete(id)
     showToast('Task restored', async () => {
       await taskService.complete(id)
@@ -260,6 +271,7 @@ async function handleToggleComplete(id: string) {
       }
     })
   } else {
+    console.log('[Task] complete', id)
     await taskService.complete(id)
     showToast('Task completed', async () => {
       await taskService.uncomplete(id)
@@ -277,6 +289,7 @@ async function handleToggleComplete(id: string) {
 
 async function handleUpdateTask(changes: Partial<TaskData>) {
   if (!selectedTaskId) return
+  console.log('[Task] update', selectedTaskId, changes)
   await taskService.update(selectedTaskId, changes)
   selectedTask = (await taskService.getById(selectedTaskId)) ?? null
   renderApp()
@@ -285,17 +298,20 @@ async function handleUpdateTask(changes: Partial<TaskData>) {
 async function handleDeleteTask() {
   if (!selectedTaskId) return
   const id = selectedTaskId
+  console.log('[Task] delete', id)
   await taskService.delete(id)
   selectedTaskId = null
   selectedTask = null
   renderApp()
   showToast('Task deleted', async () => {
+    console.log('[Task] restore', id)
     await taskService.restore(id)
   })
 }
 
 async function handleAddChecklistItem(title: string) {
   if (!selectedTaskId) return
+  console.log('[Checklist] add', selectedTaskId, title)
   await taskService.addChecklistItem(selectedTaskId, title)
   selectedTask = (await taskService.getById(selectedTaskId)) ?? null
   renderApp()
@@ -303,6 +319,7 @@ async function handleAddChecklistItem(title: string) {
 
 async function handleToggleChecklistItem(itemId: string) {
   if (!selectedTaskId) return
+  console.log('[Checklist] toggle', selectedTaskId, itemId)
   await taskService.toggleChecklistItem(selectedTaskId, itemId)
   selectedTask = (await taskService.getById(selectedTaskId)) ?? null
   renderApp()
@@ -310,26 +327,32 @@ async function handleToggleChecklistItem(itemId: string) {
 
 async function handleRemoveChecklistItem(itemId: string) {
   if (!selectedTaskId) return
+  console.log('[Checklist] remove', selectedTaskId, itemId)
   await taskService.removeChecklistItem(selectedTaskId, itemId)
   selectedTask = (await taskService.getById(selectedTaskId)) ?? null
   renderApp()
 }
 
 async function handleNewProject() {
+  console.log('[Project] open create dialog')
   const result = await showProjectDialog()
   if (result) {
+    console.log('[Project] create', result)
     await projectService.create(result.name, result.color)
   }
 }
 
 async function handleNewTag() {
+  console.log('[Tag] open create dialog')
   const result = await showTagDialog()
   if (result) {
+    console.log('[Tag] create', result)
     await tagService.create(result.name, result.color)
   }
 }
 
 function handleSearch(query: string) {
+  console.log('[Search]', query)
   searchQuery = query
   renderApp()
 }
