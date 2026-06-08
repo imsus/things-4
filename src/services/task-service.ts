@@ -120,4 +120,59 @@ export class TaskService {
         .sortBy('completedAt')
     )
   }
+
+  getTodayTasks() {
+    const today = new Date().toISOString().split('T')[0]!
+    return liveQuery(() =>
+      db.tasks
+        .where('deletedAt')
+        .equals('')
+        .and(t => t.completedAt === null && !t.heading && t.startDate !== null && t.startDate <= today)
+        .sortBy('order')
+    )
+  }
+
+  getUpcomingTasks() {
+    const today = new Date().toISOString().split('T')[0]!
+    return liveQuery(() =>
+      db.tasks
+        .where('deletedAt')
+        .equals('')
+        .and(t => t.completedAt === null && !t.heading && t.startDate !== null && t.startDate > today)
+        .sortBy('startDate')
+    )
+  }
+
+  getAnytimeTasks() {
+    return liveQuery(() =>
+      db.tasks
+        .where('deletedAt')
+        .equals('')
+        .and(t => t.completedAt === null && !t.heading && t.startDate === null && t.projectId !== null && !t.someday)
+        .sortBy('order')
+    )
+  }
+
+  getSomedayTasks() {
+    return liveQuery(() =>
+      db.tasks
+        .where('deletedAt')
+        .equals('')
+        .and(t => t.completedAt === null && !t.heading && t.someday)
+        .sortBy('order')
+    )
+  }
+
+  getTasksByTag(tagId: string) {
+    return liveQuery(async () => {
+      const allTasks = await db.tasks
+        .where('deletedAt')
+        .equals('')
+        .and(t => t.completedAt === null && !t.heading)
+        .toArray()
+      return allTasks
+        .filter(t => t.tags.includes(tagId))
+        .sort((a, b) => a.order - b.order)
+    })
+  }
 }

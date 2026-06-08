@@ -46,8 +46,9 @@ router.listen(() => {
 })
 
 function loadTasksForCurrentView() {
-  // Unsubscribe from previous if needed
   const projectId = extractProjectId(currentPath)
+  const tagId = extractTagId(currentPath)
+
   if (projectId) {
     liveQuery(() =>
       db.tasks
@@ -56,15 +57,18 @@ function loadTasksForCurrentView() {
         .and(t => t.completedAt === null && t.deletedAt === null && !t.heading)
         .sortBy('order')
     ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  } else if (tagId) {
+    taskService.getTasksByTag(tagId).subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  } else if (currentPath === '/today') {
+    taskService.getTodayTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  } else if (currentPath === '/upcoming') {
+    taskService.getUpcomingTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  } else if (currentPath === '/anytime') {
+    taskService.getAnytimeTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  } else if (currentPath === '/someday') {
+    taskService.getSomedayTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (currentPath === '/logbook') {
-    liveQuery(() =>
-      db.tasks
-        .where('completedAt')
-        .notEqual('')
-        .and(t => t.deletedAt === null)
-        .reverse()
-        .sortBy('completedAt')
-    ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
+    taskService.getCompletedTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else {
     // Inbox view (default)
     liveQuery(() =>
@@ -93,6 +97,11 @@ function extractProjectId(path: string): string | null {
   return match ? match[1]! : null
 }
 
+function extractTagId(path: string): string | null {
+  const match = path.match(/^\/tags\/(.+)$/)
+  return match ? match[1]! : null
+}
+
 function getViewName(path: string): string {
   if (path === '/inbox') return 'Inbox'
   if (path === '/today') return 'Today'
@@ -104,7 +113,10 @@ function getViewName(path: string): string {
     const project = cachedProjects.find(p => p.id === extractProjectId(path))
     return project?.name ?? 'Project'
   }
-  if (path.startsWith('/tags/')) return 'Tag'
+  if (path.startsWith('/tags/')) {
+    const tag = cachedTags.find(t => t.id === extractTagId(path))
+    return tag?.name ?? 'Tag'
+  }
   return 'Things 4'
 }
 
