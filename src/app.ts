@@ -29,6 +29,7 @@ let cachedTasks: TaskData[] = []
 let cachedProjects: ProjectData[] = []
 let cachedTags: TagData[] = []
 let searchQuery = ''
+let unsubscribeCurrentView: { unsubscribe: () => void } | null = null
 
 router.addRoute('/inbox')
 router.addRoute('/today')
@@ -77,12 +78,18 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 })
 
 function loadTasksForCurrentView() {
+  // Unsubscribe from previous view's live query
+  if (unsubscribeCurrentView) {
+    unsubscribeCurrentView.unsubscribe()
+    unsubscribeCurrentView = null
+  }
+
   const projectId = extractProjectId(currentPath)
   const tagId = extractTagId(currentPath)
   console.log('[View] load tasks for', currentPath, { projectId, tagId })
 
   if (projectId) {
-    liveQuery(() =>
+    unsubscribeCurrentView = liveQuery(() =>
       db.tasks
         .where('projectId')
         .equals(projectId)
@@ -90,23 +97,23 @@ function loadTasksForCurrentView() {
         .sortBy('order')
     ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (tagId) {
-    taskService.getTasksByTag(tagId).subscribe(tasks => { cachedTasks = tasks; renderApp() })
+    unsubscribeCurrentView = taskService.getTasksByTag(tagId).subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (currentPath === '/today') {
-    taskService.getTodayTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+    unsubscribeCurrentView = taskService.getTodayTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (currentPath === '/upcoming') {
-    taskService.getUpcomingTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+    unsubscribeCurrentView = taskService.getUpcomingTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (currentPath === '/anytime') {
-    taskService.getAnytimeTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+    unsubscribeCurrentView = taskService.getAnytimeTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (currentPath === '/someday') {
-    taskService.getSomedayTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+    unsubscribeCurrentView = taskService.getSomedayTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (currentPath === '/logbook') {
-    taskService.getCompletedTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
+    unsubscribeCurrentView = taskService.getCompletedTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else {
     // Inbox view (default)
-    liveQuery(() =>
+    unsubscribeCurrentView = liveQuery(() =>
       db.tasks
         .where('deletedAt')
-        .equals('')
+        .equals(null as unknown as string)
         .and(t => t.completedAt === null && t.projectId === null && !t.heading)
         .sortBy('order')
     ).subscribe(tasks => { cachedTasks = tasks; renderApp() })

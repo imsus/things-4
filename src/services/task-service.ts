@@ -83,9 +83,9 @@ export class TaskService {
   getInboxTasks() {
     return liveQuery(() =>
       db.tasks
-        .where('projectId')
-        .equals('')
-        .and(t => t.completedAt === null && t.deletedAt === null && !t.heading)
+        .where('completedAt')
+        .equals(null as unknown as string)
+        .and(t => t.deletedAt === null && t.projectId === null && !t.heading)
         .sortBy('order')
     )
   }
@@ -94,7 +94,7 @@ export class TaskService {
     return liveQuery(() =>
       db.tasks
         .where('deletedAt')
-        .equals('')
+        .equals(null as unknown as string)
         .and(t => t.completedAt === null)
         .sortBy('order')
     )
@@ -114,7 +114,7 @@ export class TaskService {
     return liveQuery(() =>
       db.tasks
         .where('completedAt')
-        .notEqual('')
+        .notEqual(null as unknown as string)
         .and(t => t.deletedAt === null)
         .reverse()
         .sortBy('completedAt')
@@ -126,7 +126,7 @@ export class TaskService {
     return liveQuery(() =>
       db.tasks
         .where('deletedAt')
-        .equals('')
+        .equals(null as unknown as string)
         .and(t => t.completedAt === null && !t.heading && t.startDate !== null && t.startDate <= today)
         .sortBy('order')
     )
@@ -137,7 +137,7 @@ export class TaskService {
     return liveQuery(() =>
       db.tasks
         .where('deletedAt')
-        .equals('')
+        .equals(null as unknown as string)
         .and(t => t.completedAt === null && !t.heading && t.startDate !== null && t.startDate > today)
         .sortBy('startDate')
     )
@@ -147,7 +147,7 @@ export class TaskService {
     return liveQuery(() =>
       db.tasks
         .where('deletedAt')
-        .equals('')
+        .equals(null as unknown as string)
         .and(t => t.completedAt === null && !t.heading && t.startDate === null && t.projectId !== null && !t.someday)
         .sortBy('order')
     )
@@ -157,7 +157,7 @@ export class TaskService {
     return liveQuery(() =>
       db.tasks
         .where('deletedAt')
-        .equals('')
+        .equals(null as unknown as string)
         .and(t => t.completedAt === null && !t.heading && t.someday)
         .sortBy('order')
     )
@@ -167,7 +167,7 @@ export class TaskService {
     return liveQuery(async () => {
       const allTasks = await db.tasks
         .where('deletedAt')
-        .equals('')
+        .equals(null as unknown as string)
         .and(t => t.completedAt === null && !t.heading)
         .toArray()
       return allTasks
