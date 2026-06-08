@@ -2,6 +2,7 @@ import { render, html } from 'lit-html'
 import { Router } from './presentation/router'
 import { renderSidebar } from './presentation/views/sidebar'
 import { renderTaskDetail } from './presentation/views/task-detail'
+import { renderSearch } from './presentation/components/search'
 import { showProjectDialog } from './presentation/views/project-dialog'
 import { showTagDialog } from './presentation/views/tag-dialog'
 import { TaskService } from './services/task-service'
@@ -27,6 +28,7 @@ let selectedTask: TaskData | null = null
 let cachedTasks: TaskData[] = []
 let cachedProjects: ProjectData[] = []
 let cachedTags: TagData[] = []
+let searchQuery = ''
 
 router.addRoute('/inbox')
 router.addRoute('/today')
@@ -41,8 +43,33 @@ router.listen(() => {
   currentPath = window.location.hash.slice(1) || '/inbox'
   selectedTaskId = null
   selectedTask = null
+  searchQuery = ''
   loadTasksForCurrentView()
   renderApp()
+})
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e: KeyboardEvent) => {
+  // Don't trigger shortcuts when typing in inputs
+  const target = e.target as HTMLElement
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+    if (e.key === 'Escape') {
+      ;(target as HTMLInputElement).blur()
+    }
+    return
+  }
+
+  if (e.key === 'n' || e.key === 'N') {
+    e.preventDefault()
+    const input = document.querySelector('input[placeholder="New task..."]') as HTMLInputElement | null
+    if (input) input.focus()
+  } else if (e.key === 'Escape') {
+    handleCloseDetail()
+  } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedTaskId) {
+      handleDeleteTask()
+    }
+  }
 })
 
 function loadTasksForCurrentView() {
@@ -120,21 +147,33 @@ function getViewName(path: string): string {
   return 'Things 4'
 }
 
+function getFilteredTasks(): TaskData[] {
+  if (!searchQuery) return cachedTasks
+  const q = searchQuery.toLowerCase()
+  return cachedTasks.filter(t =>
+    t.title.toLowerCase().includes(q) ||
+    t.notes.toLowerCase().includes(q)
+  )
+}
+
 function renderApp() {
+  const filteredTasks = getFilteredTasks()
+
   render(html`
     <div class="flex h-screen bg-white">
       ${renderSidebar(currentPath, cachedProjects, cachedTags, handleNewProject, handleNewTag)}
       <div class="flex-1 flex flex-col h-full overflow-hidden">
+        ${renderSearch(searchQuery, handleSearch)}
         <header class="px-6 py-4 border-b border-gray-200">
           <h2 class="text-xl font-semibold text-gray-900">${getViewName(currentPath)}</h2>
-          <p class="text-sm text-gray-500 mt-1">${cachedTasks.length} tasks</p>
+          <p class="text-sm text-gray-500 mt-1">${filteredTasks.length} tasks</p>
         </header>
         <div class="flex-1 overflow-y-auto px-6 py-4">
-          ${cachedTasks.length === 0
-            ? html`<p class="text-gray-400 text-sm">No tasks yet.</p>`
+          ${filteredTasks.length === 0
+            ? html`<p class="text-gray-400 text-sm">${searchQuery ? 'No matching tasks.' : 'No tasks yet.'}</p>`
             : html`
               <ul class="space-y-1">
-                ${cachedTasks.map(task => renderTaskItem(task))}
+                ${filteredTasks.map(task => renderTaskItem(task))}
               </ul>
             `}
         </div>
@@ -288,4 +327,9 @@ async function handleNewTag() {
   if (result) {
     await tagService.create(result.name, result.color)
   }
+}
+
+function handleSearch(query: string) {
+  searchQuery = query
+  renderApp()
 }
