@@ -26,3 +26,29 @@
 - **Toast: module-level singleton container** appended to `document.body`. `showToast()` creates elements directly, no lit-html needed.
 - **Undo pattern:** perform action first, show toast, if undo clicked within 5s reverse it. Simple and effective.
 - **Test count: 26 total** (+4 toast tests).
+
+## Issue #4: Project CRUD + color
+
+- **Dexie `where().equals()` works for indexed fields.** `projectId` is indexed, so querying tasks by project is fast.
+- **Delete cascade:** when deleting a project, iterate tasks and set `projectId = null` (move to Inbox).
+- **Dialog pattern:** create a DOM element, use lit-html `render()` inside it, resolve a Promise on close. Clean separation from the main app render tree.
+- **Test count: 32 total** (+2 project domain, +4 project service).
+
+## Issue #5: Tag CRUD + color
+
+- **Array fields can't be indexed in Dexie.** `tags: string[]` on Task means you can't use `.where('tags').equals(id)`. Query all tasks and filter in memory instead.
+- **Delete cascade for tags:** iterate all tasks, filter out the deleted tag ID from each task's `tags` array.
+- **Test count: 36 total** (+4 tag service).
+
+## Issue #6: Scheduling buckets + Logbook
+
+- **Scheduling buckets are computed views, not stored entities.** Today/Upcoming/Anytime/Someday are just different filter functions on the same task data.
+- **Date comparison:** use ISO string comparison (`startDate <= today`) since dates are stored as ISO strings.
+- **Test count: 36 total** (no new tests — queries are just filters on existing data).
+
+## Issue #7: Search + keyboard shortcuts + PWA
+
+- **Search:** simple `String.toLowerCase().includes()` — no fuzzy search needed for a personal todo app.
+- **Keyboard shortcuts:** listen on `document`, check `target.tagName` to avoid triggering in inputs.
+- **vite-plugin-pwa:** just add to vite.config.ts, it generates manifest.json and service worker automatically.
+- **Test count: 36 total** (no new tests — presentation-layer features).
