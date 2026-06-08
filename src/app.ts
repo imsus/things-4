@@ -4,6 +4,7 @@ import { renderSidebar } from './presentation/views/sidebar'
 import { renderInboxView } from './presentation/views/inbox'
 import { renderTaskDetail } from './presentation/views/task-detail'
 import { TaskService } from './services/task-service'
+import { showToast } from './presentation/components/toast'
 import { db } from './data/database'
 import { liveQuery } from 'dexie'
 import type { TaskData } from './domain/task'
@@ -62,6 +63,7 @@ function renderApp(tasks?: TaskData[]) {
         selectedTask,
         handleCloseDetail,
         handleUpdateTask,
+        handleDeleteTask,
         handleAddChecklistItem,
         handleToggleChecklistItem,
         handleRemoveChecklistItem,
@@ -91,8 +93,22 @@ async function handleToggleComplete(id: string) {
   if (!task) return
   if (task.completedAt) {
     await taskService.uncomplete(id)
+    showToast('Task restored', async () => {
+      await taskService.complete(id)
+      if (selectedTaskId === id) {
+        selectedTask = (await taskService.getById(id)) ?? null
+        renderApp()
+      }
+    })
   } else {
     await taskService.complete(id)
+    showToast('Task completed', async () => {
+      await taskService.uncomplete(id)
+      if (selectedTaskId === id) {
+        selectedTask = (await taskService.getById(id)) ?? null
+        renderApp()
+      }
+    })
   }
   if (selectedTaskId === id) {
     selectedTask = (await taskService.getById(id)) ?? null
@@ -105,6 +121,18 @@ async function handleUpdateTask(changes: Partial<TaskData>) {
   await taskService.update(selectedTaskId, changes)
   selectedTask = (await taskService.getById(selectedTaskId)) ?? null
   renderApp()
+}
+
+async function handleDeleteTask() {
+  if (!selectedTaskId) return
+  const id = selectedTaskId
+  await taskService.delete(id)
+  selectedTaskId = null
+  selectedTask = null
+  renderApp()
+  showToast('Task deleted', async () => {
+    await taskService.restore(id)
+  })
 }
 
 async function handleAddChecklistItem(title: string) {

@@ -5,6 +5,7 @@ export function renderTaskDetail(
   task: TaskData | null,
   onClose: () => void,
   onUpdate: (changes: Partial<TaskData>) => void,
+  onDelete: () => void,
   onAddChecklistItem: (title: string) => void,
   onToggleChecklistItem: (itemId: string) => void,
   onRemoveChecklistItem: (itemId: string) => void,
@@ -85,6 +86,15 @@ export function renderTaskDetail(
             @change=${(e: Event) => onUpdate({ someday: (e.target as HTMLInputElement).checked })}
           />
           <label class="text-sm text-gray-700">Someday</label>
+        </div>
+
+        <div>
+          <button
+            class="text-sm text-red-500 hover:text-red-700"
+            @click=${onDelete}
+          >
+            Delete task
+          </button>
         </div>
 
         <div>
