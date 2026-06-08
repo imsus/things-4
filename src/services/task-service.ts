@@ -81,97 +81,84 @@ export class TaskService {
   }
 
   getInboxTasks() {
-    return liveQuery(() =>
-      db.tasks
-        .where('completedAt')
-        .equals(null as unknown as string)
-        .and(t => t.deletedAt === null && t.projectId === null && !t.heading)
-        .sortBy('order')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.completedAt === null && t.deletedAt === null && t.projectId === null && !t.heading)
+        .sort((a, b) => a.order - b.order)
+    })
   }
 
   getAllActiveTasks() {
-    return liveQuery(() =>
-      db.tasks
-        .where('deletedAt')
-        .equals(null as unknown as string)
-        .and(t => t.completedAt === null)
-        .sortBy('order')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.deletedAt === null && t.completedAt === null)
+        .sort((a, b) => a.order - b.order)
+    })
   }
 
   getTasksByProject(projectId: string) {
-    return liveQuery(() =>
-      db.tasks
-        .where('projectId')
-        .equals(projectId)
-        .and(t => t.completedAt === null && t.deletedAt === null && !t.heading)
-        .sortBy('order')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.where('projectId').equals(projectId).toArray()
+      return tasks
+        .filter(t => t.completedAt === null && t.deletedAt === null && !t.heading)
+        .sort((a, b) => a.order - b.order)
+    })
   }
 
   getCompletedTasks() {
-    return liveQuery(() =>
-      db.tasks
-        .where('completedAt')
-        .notEqual(null as unknown as string)
-        .and(t => t.deletedAt === null)
-        .reverse()
-        .sortBy('completedAt')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.completedAt !== null && t.deletedAt === null)
+        .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
+    })
   }
 
   getTodayTasks() {
     const today = new Date().toISOString().split('T')[0]!
-    return liveQuery(() =>
-      db.tasks
-        .where('deletedAt')
-        .equals(null as unknown as string)
-        .and(t => t.completedAt === null && !t.heading && t.startDate !== null && t.startDate <= today)
-        .sortBy('order')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.deletedAt === null && t.completedAt === null && !t.heading && t.startDate !== null && t.startDate <= today)
+        .sort((a, b) => a.order - b.order)
+    })
   }
 
   getUpcomingTasks() {
     const today = new Date().toISOString().split('T')[0]!
-    return liveQuery(() =>
-      db.tasks
-        .where('deletedAt')
-        .equals(null as unknown as string)
-        .and(t => t.completedAt === null && !t.heading && t.startDate !== null && t.startDate > today)
-        .sortBy('startDate')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.deletedAt === null && t.completedAt === null && !t.heading && t.startDate !== null && t.startDate > today)
+        .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
+    })
   }
 
   getAnytimeTasks() {
-    return liveQuery(() =>
-      db.tasks
-        .where('deletedAt')
-        .equals(null as unknown as string)
-        .and(t => t.completedAt === null && !t.heading && t.startDate === null && t.projectId !== null && !t.someday)
-        .sortBy('order')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.deletedAt === null && t.completedAt === null && !t.heading && t.startDate === null && t.projectId !== null && !t.someday)
+        .sort((a, b) => a.order - b.order)
+    })
   }
 
   getSomedayTasks() {
-    return liveQuery(() =>
-      db.tasks
-        .where('deletedAt')
-        .equals(null as unknown as string)
-        .and(t => t.completedAt === null && !t.heading && t.someday)
-        .sortBy('order')
-    )
+    return liveQuery(async () => {
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.deletedAt === null && t.completedAt === null && !t.heading && t.someday)
+        .sort((a, b) => a.order - b.order)
+    })
   }
 
   getTasksByTag(tagId: string) {
     return liveQuery(async () => {
-      const allTasks = await db.tasks
-        .where('deletedAt')
-        .equals(null as unknown as string)
-        .and(t => t.completedAt === null && !t.heading)
-        .toArray()
-      return allTasks
-        .filter(t => t.tags.includes(tagId))
+      const tasks = await db.tasks.toArray()
+      return tasks
+        .filter(t => t.deletedAt === null && t.completedAt === null && !t.heading && t.tags.includes(tagId))
         .sort((a, b) => a.order - b.order)
     })
   }

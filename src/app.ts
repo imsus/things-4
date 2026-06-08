@@ -112,10 +112,11 @@ function loadTasksForCurrentView() {
     // Inbox view (default)
     unsubscribeCurrentView = liveQuery(() =>
       db.tasks
-        .where('deletedAt')
-        .equals(null as unknown as string)
-        .and(t => t.completedAt === null && t.projectId === null && !t.heading)
-        .sortBy('order')
+        .toArray()
+        .then(tasks => tasks
+          .filter(t => t.completedAt === null && t.deletedAt === null && t.projectId === null && !t.heading)
+          .sort((a, b) => a.order - b.order)
+        )
     ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
   }
 }
