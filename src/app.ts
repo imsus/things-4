@@ -3,8 +3,10 @@ import { Router } from './presentation/router'
 import { renderSidebar } from './presentation/views/sidebar'
 import { renderTaskDetail } from './presentation/views/task-detail'
 import { showProjectDialog } from './presentation/views/project-dialog'
+import { showTagDialog } from './presentation/views/tag-dialog'
 import { TaskService } from './services/task-service'
 import { ProjectService } from './services/project-service'
+import { TagService } from './services/tag-service'
 import { showToast } from './presentation/components/toast'
 import { db } from './data/database'
 import { liveQuery } from 'dexie'
@@ -17,6 +19,7 @@ const app = document.getElementById('app')!
 const router = new Router()
 const taskService = new TaskService()
 const projectService = new ProjectService()
+const tagService = new TagService()
 
 let currentPath = '/inbox'
 let selectedTaskId: string | null = null
@@ -269,5 +272,8 @@ async function handleNewProject() {
 }
 
 async function handleNewTag() {
-  // Will be implemented in Issue #5
+  const result = await showTagDialog()
+  if (result) {
+    await tagService.create(result.name, result.color)
+  }
 }
