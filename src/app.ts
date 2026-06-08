@@ -1,22 +1,29 @@
 import { render, html } from 'lit-html'
 import { Router } from './presentation/router'
 import { renderSidebar } from './presentation/views/sidebar'
-import { renderInboxView } from './presentation/views/inbox'
 import { renderTaskDetail } from './presentation/views/task-detail'
+import { showProjectDialog } from './presentation/views/project-dialog'
 import { TaskService } from './services/task-service'
+import { ProjectService } from './services/project-service'
 import { showToast } from './presentation/components/toast'
 import { db } from './data/database'
 import { liveQuery } from 'dexie'
 import type { TaskData } from './domain/task'
+import type { ProjectData } from './domain/project'
+import type { TagData } from './domain/tag'
 import './styles.css'
 
 const app = document.getElementById('app')!
 const router = new Router()
 const taskService = new TaskService()
+const projectService = new ProjectService()
 
 let currentPath = '/inbox'
 let selectedTaskId: string | null = null
 let selectedTask: TaskData | null = null
+let cachedTasks: TaskData[] = []
+let cachedProjects: ProjectData[] = []
+let cachedTags: TagData[] = []
 
 router.addRoute('/inbox')
 router.addRoute('/today')
@@ -31,34 +38,110 @@ router.listen(() => {
   currentPath = window.location.hash.slice(1) || '/inbox'
   selectedTaskId = null
   selectedTask = null
+  loadTasksForCurrentView()
   renderApp()
 })
 
-// Subscribe to inbox tasks
-liveQuery(() =>
-  db.tasks
-    .where('deletedAt')
-    .equals('')
-    .and(t => t.completedAt === null && t.projectId === null && !t.heading)
-    .sortBy('order')
-).subscribe(tasks => {
-  renderApp(tasks)
+function loadTasksForCurrentView() {
+  // Unsubscribe from previous if needed
+  const projectId = extractProjectId(currentPath)
+  if (projectId) {
+    liveQuery(() =>
+      db.tasks
+        .where('projectId')
+        .equals(projectId)
+        .and(t => t.completedAt === null && t.deletedAt === null && !t.heading)
+        .sortBy('order')
+    ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  } else if (currentPath === '/logbook') {
+    liveQuery(() =>
+      db.tasks
+        .where('completedAt')
+        .notEqual('')
+        .and(t => t.deletedAt === null)
+        .reverse()
+        .sortBy('completedAt')
+    ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  } else {
+    // Inbox view (default)
+    liveQuery(() =>
+      db.tasks
+        .where('deletedAt')
+        .equals('')
+        .and(t => t.completedAt === null && t.projectId === null && !t.heading)
+        .sortBy('order')
+    ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
+  }
+}
+
+// Subscribe to projects and tags
+liveQuery(() => db.projects.orderBy('order').toArray()).subscribe(projects => {
+  cachedProjects = projects
+  renderApp()
 })
 
-let cachedTasks: TaskData[] = []
+liveQuery(() => db.tags.orderBy('order').toArray()).subscribe(tags => {
+  cachedTags = tags
+  renderApp()
+})
 
-function renderApp(tasks?: TaskData[]) {
-  if (tasks) cachedTasks = tasks
+function extractProjectId(path: string): string | null {
+  const match = path.match(/^\/projects\/(.+)$/)
+  return match ? match[1]! : null
+}
 
+function getViewName(path: string): string {
+  if (path === '/inbox') return 'Inbox'
+  if (path === '/today') return 'Today'
+  if (path === '/upcoming') return 'Upcoming'
+  if (path === '/anytime') return 'Anytime'
+  if (path === '/someday') return 'Someday'
+  if (path === '/logbook') return 'Logbook'
+  if (path.startsWith('/projects/')) {
+    const project = cachedProjects.find(p => p.id === extractProjectId(path))
+    return project?.name ?? 'Project'
+  }
+  if (path.startsWith('/tags/')) return 'Tag'
+  return 'Things 4'
+}
+
+function renderApp() {
   render(html`
     <div class="flex h-screen bg-white">
-      ${renderSidebar(currentPath)}
-      ${renderInboxView(
-        cachedTasks,
-        handleTaskClick,
-        handleNewTask,
-        handleToggleComplete,
-      )}
+      ${renderSidebar(currentPath, cachedProjects, cachedTags, handleNewProject, handleNewTag)}
+      <div class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-900">${getViewName(currentPath)}</h2>
+          <p class="text-sm text-gray-500 mt-1">${cachedTasks.length} tasks</p>
+        </header>
+        <div class="flex-1 overflow-y-auto px-6 py-4">
+          ${cachedTasks.length === 0
+            ? html`<p class="text-gray-400 text-sm">No tasks yet.</p>`
+            : html`
+              <ul class="space-y-1">
+                ${cachedTasks.map(task => renderTaskItem(task))}
+              </ul>
+            `}
+        </div>
+        <div class="px-6 py-3 border-t border-gray-200">
+          <input
+            type="text"
+            placeholder="New task..."
+            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            @keydown=${(e: KeyboardEvent) => {
+              if (e.key === 'Enter') {
+                const input = e.target as HTMLInputElement
+                const title = input.value.trim()
+                if (title) {
+                  const projectId = extractProjectId(currentPath)
+                  handleNewTask(title, projectId)
+                  input.value = ''
+                }
+              }
+            }}
+          />
+        </div>
+      </div>
       ${renderTaskDetail(
         selectedTask,
         handleCloseDetail,
@@ -70,6 +153,28 @@ function renderApp(tasks?: TaskData[]) {
       )}
     </div>
   `, app)
+}
+
+function renderTaskItem(task: TaskData) {
+  const isCompleted = task.completedAt !== null
+  return html`
+    <li class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 group cursor-pointer"
+        @click=${() => handleTaskClick(task.id)}>
+      <button
+        class="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors
+          ${isCompleted ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}"
+        @click=${(e: Event) => { e.stopPropagation(); handleToggleComplete(task.id) }}
+      >
+        ${isCompleted ? html`<svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>` : ''}
+      </button>
+      <span class="text-sm text-gray-900 ${isCompleted ? 'line-through text-gray-400' : ''}">${task.title}</span>
+      ${task.tags.length > 0 ? html`
+        <div class="flex gap-1 ml-auto">
+          ${task.tags.map(() => html`<span class="w-2 h-2 rounded-full bg-gray-300"></span>`)}
+        </div>
+      ` : ''}
+    </li>
+  `
 }
 
 async function handleTaskClick(id: string) {
@@ -84,8 +189,8 @@ function handleCloseDetail() {
   renderApp()
 }
 
-async function handleNewTask(title: string) {
-  await taskService.create(title)
+async function handleNewTask(title: string, projectId: string | null = null) {
+  await taskService.create(title, projectId)
 }
 
 async function handleToggleComplete(id: string) {
@@ -154,4 +259,15 @@ async function handleRemoveChecklistItem(itemId: string) {
   await taskService.removeChecklistItem(selectedTaskId, itemId)
   selectedTask = (await taskService.getById(selectedTaskId)) ?? null
   renderApp()
+}
+
+async function handleNewProject() {
+  const result = await showProjectDialog()
+  if (result) {
+    await projectService.create(result.name, result.color)
+  }
+}
+
+async function handleNewTag() {
+  // Will be implemented in Issue #5
 }

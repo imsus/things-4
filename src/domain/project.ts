@@ -8,3 +8,16 @@ export interface ProjectData {
   createdAt: string
   updatedAt: string
 }
+
+export function createProject(overrides: Partial<ProjectData> = {}): ProjectData {
+  const now = new Date().toISOString()
+  return {
+    id: crypto.randomUUID(),
+    name: '',
+    color: 'blue',
+    order: Date.now(),
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  }
+}

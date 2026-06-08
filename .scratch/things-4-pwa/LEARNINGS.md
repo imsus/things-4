@@ -19,3 +19,10 @@
 - **Live queries from Dexie for reactivity.** `liveQuery(() => db.tasks.where(...).and(...).sortBy(...))` returns an Observable. Subscribe in the app to re-render.
 - **Test count: 22 total** (3 colors, 3 router, 8 task domain, 8 task service).
 - **Build output: ~116kb JS** (includes Dexie + fake-indexeddb in bundle). Gzipped: ~38kb. Still reasonable.
+
+## Issue #3: Undo toast on delete/complete
+
+- **lit-html `render()` doesn't play well with `document.body.innerHTML = ''` in tests.** Use direct DOM manipulation (`document.createElement`) for standalone UI pieces like toasts that live outside the lit-html render tree.
+- **Toast: module-level singleton container** appended to `document.body`. `showToast()` creates elements directly, no lit-html needed.
+- **Undo pattern:** perform action first, show toast, if undo clicked within 5s reverse it. Simple and effective.
+- **Test count: 26 total** (+4 toast tests).
