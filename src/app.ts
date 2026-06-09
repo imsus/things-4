@@ -204,7 +204,7 @@ function renderApp() {
               </ul>
             `}
         </div>
-        <div class="px-6 lg:px-12 py-3 lg:py-4">
+        <div class="px-6 lg:px-12 py-3 lg:py-4 safe-area-bottom">
           <input
             type="text"
             placeholder="New task..."
@@ -222,6 +222,21 @@ function renderApp() {
             }}
           />
         </div>
+
+        <button
+          class="lg:hidden fixed bottom-6 right-6 w-[56px] h-[56px] rounded-full bg-[var(--color-things-accent)] text-white flex items-center justify-center shadow-lg z-20 active:scale-95 transition-transform"
+          style="box-shadow: 0 4px 12px rgba(0,122,255,0.4)"
+          aria-label="Add new task"
+          @click=${() => {
+            const input = document.querySelector('input[placeholder="New task..."]') as HTMLInputElement | null
+            if (input) {
+              input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              input.focus()
+            }
+          }}
+        >
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+        </button>
       </div>
     </div>
   `, app)
@@ -244,7 +259,7 @@ function renderTaskItem(task: TaskData) {
         @click=${() => handleTaskClick(task.id)}>
       <button
         aria-label="${isCompleted ? 'Mark task as incomplete' : 'Mark task as complete'}"
-        class="mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
+        class="touch-target mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
           ${isCompleted
             ? 'bg-[var(--color-things-accent)] border-[var(--color-things-accent)]'
             : 'border-[var(--color-things-checkbox-border)] hover:border-[var(--color-things-accent)]'}"
@@ -254,12 +269,12 @@ function renderTaskItem(task: TaskData) {
       </button>
       <div class="flex-1 min-w-0">
         <span class="text-[15px] leading-snug ${isCompleted ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${task.title}</span>
-        ${projectName ? html`<div class="text-[11px] text-[var(--color-things-secondary)] mt-0.5">${projectName}</div>` : ''}
+        ${projectName ? html`<div class="text-[12px] lg:text-[11px] text-[var(--color-things-secondary)] mt-0.5">${projectName}</div>` : ''}
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
-        ${task.someday ? html`<span class="text-[11px] text-[var(--color-things-secondary)]">Someday</span>` : ''}
-        ${task.startDate ? html`<span class="text-[11px] text-[var(--color-things-accent)]">${formatDate(task.startDate)}</span>` : ''}
-        ${task.deadline ? html`<span class="text-[11px] text-[var(--color-things-red)]">${formatDate(task.deadline)}</span>` : ''}
+        ${task.someday ? html`<span class="text-[12px] lg:text-[11px] text-[var(--color-things-secondary)]">Someday</span>` : ''}
+        ${task.startDate ? html`<span class="text-[12px] lg:text-[11px] text-[var(--color-things-accent)]">${formatDate(task.startDate)}</span>` : ''}
+        ${task.deadline ? html`<span class="text-[12px] lg:text-[11px] text-[var(--color-things-red)]">${formatDate(task.deadline)}</span>` : ''}
         ${task.tags.length > 0 ? html`
           <div class="flex gap-1">
             ${task.tags.map(() => html`<span class="w-[6px] h-[6px] rounded-full bg-[var(--color-things-secondary)]"></span>`)}
@@ -282,7 +297,7 @@ function renderExpandedTask(task: TaskData, _projectName: string) {
       <div class="flex items-start gap-3 lg:gap-4">
         <button
           aria-label="${task.completedAt ? 'Mark task as incomplete' : 'Mark task as complete'}"
-          class="mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
+          class="touch-target mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
             ${task.completedAt
               ? 'bg-[var(--color-things-accent)] border-[var(--color-things-accent)]'
               : 'border-[var(--color-things-checkbox-border)] hover:border-[var(--color-things-accent)]'}"
@@ -321,7 +336,7 @@ function renderExpandedTask(task: TaskData, _projectName: string) {
           <div class="flex items-center gap-3 py-1.5 border-b border-[var(--color-things-divider)] last:border-0 group/item">
             <button
               aria-label="${item.checked ? 'Mark item as incomplete' : 'Mark item as complete'}"
-              class="w-[16px] h-[16px] rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150
+              class="touch-target w-[16px] h-[16px] rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150
                 ${item.checked
                   ? 'bg-[var(--color-things-checklist-circle)] border-[var(--color-things-checklist-circle)]'
                   : 'border-[var(--color-things-checklist-circle)]'}"
@@ -330,7 +345,7 @@ function renderExpandedTask(task: TaskData, _projectName: string) {
               ${item.checked ? html`<svg class="w-[8px] h-[8px] text-white" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" /></svg>` : ''}
             </button>
             <span class="flex-1 text-[15px] ${item.checked ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${item.title}</span>
-            <button aria-label="Remove checklist item" class="opacity-0 group-hover/item:opacity-100 text-[var(--color-things-muted)] hover:text-[var(--color-things-red)] transition-opacity" @click=${() => handleRemoveChecklistItem(item.id)}>
+            <button aria-label="Remove checklist item" class="touch-target opacity-0 group-hover/item:opacity-100 touch-show text-[var(--color-things-muted)] hover:text-[var(--color-things-red)] transition-opacity" @click=${() => handleRemoveChecklistItem(item.id)}>
               <svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>

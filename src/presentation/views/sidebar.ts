@@ -79,7 +79,7 @@ export function renderSidebar(
         <ul class="space-y-0">
           ${projects.map(p => html`
             <li>
-              <a href="#/projects/${p.id}" class="flex items-center gap-2.5 px-2 py-[4px] rounded text-[13px] transition-colors
+              <a href="#/projects/${p.id}" class="flex items-center gap-2.5 px-2 py-[6px] lg:py-[4px] rounded text-[13px] transition-colors
                 ${currentPath === `/projects/${p.id}` ? 'bg-[var(--color-things-hover)] text-[var(--color-things-text)] font-medium' : 'text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] hover:bg-[var(--color-things-hover)]'}">
                 <span class="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center" style="background: ${getColorVar(p.color)}20">
                   <svg class="w-[12px] h-[12px]" viewBox="0 0 24 24" fill="${getColorVar(p.color)}"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
@@ -99,7 +99,7 @@ export function renderSidebar(
         <ul class="space-y-0">
           ${tags.map(t => html`
             <li>
-              <a href="#/tags/${t.id}" class="flex items-center gap-2.5 px-2 py-[4px] rounded text-[13px] transition-colors
+              <a href="#/tags/${t.id}" class="flex items-center gap-2.5 px-2 py-[6px] lg:py-[4px] rounded text-[13px] transition-colors
                 ${currentPath === `/tags/${t.id}` ? 'bg-[var(--color-things-hover)] text-[var(--color-things-text)] font-medium' : 'text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] hover:bg-[var(--color-things-hover)]'}">
                 <span class="w-[18px] h-[18px] rounded-full flex items-center justify-center" style="background: ${getColorVar(t.color)}20">
                   <span class="w-[8px] h-[8px] rounded-full" style="background: ${getColorVar(t.color)}"></span>
@@ -126,7 +126,7 @@ function navItem(item: NavItem, currentPath: string): TemplateResult {
 
   return html`
     <li>
-      <a href="#${item.path}" class="flex items-center gap-2.5 px-2 py-[4px] rounded text-[13px] transition-colors
+      <a href="#${item.path}" class="flex items-center gap-2.5 px-2 py-[6px] lg:py-[4px] rounded text-[13px] transition-colors
         ${isActive ? 'bg-[var(--color-things-hover)] text-[var(--color-things-text)] font-medium' : 'text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] hover:bg-[var(--color-things-hover)]'}">
         <span class="w-[18px] h-[18px] flex items-center justify-center flex-shrink-0">${item.icon}</span>
         <span class="flex-1">${item.label}</span>
