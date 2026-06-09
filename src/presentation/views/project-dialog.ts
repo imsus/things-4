@@ -13,7 +13,7 @@ export function showProjectDialog(): Promise<ProjectDialogResult | null> {
     if (dialogEl) dialogEl.remove()
 
     dialogEl = document.createElement('div')
-    dialogEl.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50'
+    dialogEl.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm'
     document.body.appendChild(dialogEl)
 
     let name = ''
@@ -21,30 +21,31 @@ export function showProjectDialog(): Promise<ProjectDialogResult | null> {
 
     function renderDialog() {
       render(html`
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-96" @click=${(e: Event) => e.stopPropagation()}>
-          <h3 class="text-lg font-semibold mb-4">New Project</h3>
+        <div class="bg-[var(--color-things-bg)] rounded-2xl shadow-2xl p-8 w-[400px]" @click=${(e: Event) => e.stopPropagation()}>
+          <h3 class="text-[17px] font-semibold text-[var(--color-things-text)] mb-6">New Project</h3>
           <input
             type="text"
             placeholder="Project name"
-            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full text-[15px] bg-transparent border-0 border-b border-[var(--color-things-divider)] focus:outline-none focus:border-[var(--color-things-blue)] pb-2 mb-6 placeholder:text-[var(--color-things-muted)]"
             .value=${name}
             @input=${(e: Event) => { name = (e.target as HTMLInputElement).value }}
           />
-          <div class="grid grid-cols-6 gap-2 mb-4">
+          <div class="grid grid-cols-6 gap-3 mb-8">
             ${PROJECT_COLORS.map(c => html`
               <button
-                class="w-8 h-8 rounded-full bg-${c}-500 ${c === color ? 'ring-2 ring-offset-2 ring-gray-900' : ''}"
+                class="w-8 h-8 rounded-full transition-transform ${c === color ? 'ring-2 ring-offset-2 ring-[var(--color-things-text)] scale-110' : 'hover:scale-105'}"
+                style="background: var(--color-things-${c})"
                 @click=${() => { color = c; renderDialog() }}
               ></button>
             `)}
           </div>
-          <div class="flex justify-end gap-2">
+          <div class="flex justify-end gap-3">
             <button
-              class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+              class="px-4 py-2 text-[14px] text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] transition-colors"
               @click=${() => { cleanup(); resolve(null) }}
             >Cancel</button>
             <button
-              class="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              class="px-5 py-2 text-[14px] bg-[var(--color-things-blue)] text-white rounded-lg hover:opacity-90 transition-opacity"
               @click=${() => { cleanup(); resolve({ name, color }) }}
             >Create</button>
           </div>

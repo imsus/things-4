@@ -16,7 +16,7 @@ describe('Toast', () => {
     const onUndo = vi.fn()
     showToast('Task deleted', onUndo)
 
-    const toast = document.querySelector('.bg-gray-900')
+    const toast = document.querySelector('[class*="rounded-xl"]')
     expect(toast).not.toBeNull()
     expect(toast!.textContent).toContain('Task deleted')
     expect(toast!.textContent).toContain('Undo')
@@ -37,11 +37,11 @@ describe('Toast', () => {
     const onUndo = vi.fn()
     showToast('Task deleted', onUndo, 1000)
 
-    expect(document.querySelector('.bg-gray-900')).not.toBeNull()
+    expect(document.querySelector('[class*="rounded-xl"]')).not.toBeNull()
 
     vi.advanceTimersByTime(1000)
 
-    expect(document.querySelector('.bg-gray-900')).toBeNull()
+    expect(document.querySelector('[class*="rounded-xl"]')).toBeNull()
     vi.useRealTimers()
   })
 
@@ -49,7 +49,7 @@ describe('Toast', () => {
     showToast('Task 1 deleted', vi.fn())
     showToast('Task 2 deleted', vi.fn())
 
-    const toasts = document.querySelectorAll('.bg-gray-900')
+    const toasts = document.querySelectorAll('[class*="rounded-xl"]')
     expect(toasts).toHaveLength(2)
   })
 })

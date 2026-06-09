@@ -1,1 +1,76 @@
 @import "tailwindcss";
+
+@theme {
+  --color-things-bg: #FFFFFF;
+  --color-things-sidebar: #F4F4F6;
+  --color-things-text: #1C1C1E;
+  --color-things-secondary: #8E8E93;
+  --color-things-muted: #AEAEB2;
+  --color-things-blue: #007AFF;
+  --color-things-yellow: #FFCC00;
+  --color-things-red: #FF3B30;
+  --color-things-green: #34C759;
+  --color-things-tag-bg: #E5E5EA;
+  --color-things-tag-active: #636366;
+  --color-things-card-bg: #F2F2F7;
+  --color-things-divider: #E5E5EA;
+  --color-things-hover: #E8E8ED;
+
+  /* Project/tag colors */
+  --color-things-orange: #FF9500;
+  --color-things-mint: #00C7BE;
+  --color-things-teal: #30B0C7;
+  --color-things-cyan: #32ADE6;
+  --color-things-purple: #AF52DE;
+  --color-things-pink: #FF2D55;
+  --color-things-gray: #8E8E93;
+  --color-things-brown: #A2845E;
+}
+
+* {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-things-bg);
+  color: var(--color-things-text);
+}
+
+/* Checkbox overrides */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-things-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--color-things-blue);
+  border-color: var(--color-things-blue);
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Date input styling */
+input[type="date"] {
+  color-scheme: light;
+}

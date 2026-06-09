@@ -175,28 +175,27 @@ function renderApp() {
   const filteredTasks = getFilteredTasks()
 
   render(html`
-    <div class="flex h-screen bg-white">
+    <div class="flex h-screen bg-[var(--color-things-bg)]">
       ${renderSidebar(currentPath, cachedProjects, cachedTags, handleNewProject, handleNewTag)}
       <div class="flex-1 flex flex-col h-full overflow-hidden">
-        ${renderSearch(searchQuery, handleSearch)}
-        <header class="px-6 py-4 border-b border-gray-200">
-          <h2 class="text-xl font-semibold text-gray-900">${getViewName(currentPath)}</h2>
-          <p class="text-sm text-gray-500 mt-1">${filteredTasks.length} tasks</p>
+        <header class="px-8 pt-8 pb-2 flex items-end justify-between">
+          <h2 class="text-[26px] font-semibold text-[var(--color-things-text)] tracking-tight">${getViewName(currentPath)}</h2>
+          ${renderSearch(searchQuery, handleSearch)}
         </header>
-        <div class="flex-1 overflow-y-auto px-6 py-4">
+        <div class="flex-1 overflow-y-auto px-8 pb-4">
           ${filteredTasks.length === 0
-            ? html`<p class="text-gray-400 text-sm">${searchQuery ? 'No matching tasks.' : 'No tasks yet.'}</p>`
+            ? html`<p class="text-[var(--color-things-muted)] text-[14px] mt-4">${searchQuery ? 'No matching tasks.' : 'No tasks yet.'}</p>`
             : html`
-              <ul class="space-y-1">
+              <ul class="space-y-0">
                 ${filteredTasks.map(task => renderTaskItem(task))}
               </ul>
             `}
         </div>
-        <div class="px-6 py-3 border-t border-gray-200">
+        <div class="px-8 py-4">
           <input
             type="text"
             placeholder="New task..."
-            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-0 py-1 text-[14px] bg-transparent border-0 border-b border-[var(--color-things-divider)] focus:outline-none focus:border-[var(--color-things-blue)] placeholder:text-[var(--color-things-muted)]"
             @keydown=${(e: KeyboardEvent) => {
               if (e.key === 'Enter') {
                 const input = e.target as HTMLInputElement
@@ -226,24 +225,40 @@ function renderApp() {
 
 function renderTaskItem(task: TaskData) {
   const isCompleted = task.completedAt !== null
+  const hasMeta = task.tags.length > 0 || task.startDate !== null || task.deadline !== null
+
   return html`
-    <li class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 group cursor-pointer"
+    <li class="flex items-start gap-3 px-2 py-[9px] rounded-md hover:bg-[var(--color-things-hover)] cursor-pointer group"
         @click=${() => handleTaskClick(task.id)}>
       <button
-        class="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors
-          ${isCompleted ? 'bg-blue-500 border-blue-500' : 'border-gray-300 hover:border-blue-400'}"
+        class="mt-[2px] w-[18px] h-[18px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-colors
+          ${isCompleted
+            ? 'bg-[var(--color-things-blue)] border-[var(--color-things-blue)]'
+            : 'border-[var(--color-things-muted)] hover:border-[var(--color-things-blue)]'}"
         @click=${(e: Event) => { e.stopPropagation(); handleToggleComplete(task.id) }}
       >
-        ${isCompleted ? html`<svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>` : ''}
+        ${isCompleted ? html`<svg class="w-[10px] h-[10px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>` : ''}
       </button>
-      <span class="text-sm text-gray-900 ${isCompleted ? 'line-through text-gray-400' : ''}">${task.title}</span>
-      ${task.tags.length > 0 ? html`
-        <div class="flex gap-1 ml-auto">
-          ${task.tags.map(() => html`<span class="w-2 h-2 rounded-full bg-gray-300"></span>`)}
-        </div>
-      ` : ''}
+      <div class="flex-1 min-w-0">
+        <span class="text-[14px] leading-snug ${isCompleted ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${task.title}</span>
+        ${hasMeta ? html`
+          <div class="flex items-center gap-2 mt-1 flex-wrap">
+            ${task.startDate ? html`<span class="text-[11px] text-[var(--color-things-secondary)]">${formatDate(task.startDate)}</span>` : ''}
+            ${task.deadline ? html`<span class="text-[11px] text-[var(--color-things-red)]">${formatDate(task.deadline)}</span>` : ''}
+            ${task.tags.map(() => html`<span class="w-1.5 h-1.5 rounded-full bg-[var(--color-things-muted)]"></span>`)}
+          </div>
+        ` : ''}
+      </div>
     </li>
   `
+}
+
+function formatDate(dateStr: string): string {
+  const today = new Date().toISOString().split('T')[0]!
+  if (dateStr === today) return 'Today'
+  const d = new Date(dateStr + 'T00:00:00')
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return `${months[d.getMonth()]} ${d.getDate()}`
 }
 
 async function handleTaskClick(id: string) {

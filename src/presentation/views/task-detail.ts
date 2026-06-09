@@ -11,112 +11,97 @@ export function renderTaskDetail(
   onRemoveChecklistItem: (itemId: string) => void,
 ): TemplateResult {
   if (!task) {
-    return html`
-      <div class="w-80 h-full border-l border-gray-200 bg-white hidden lg:flex flex-col">
-        <div class="flex-1 flex items-center justify-center px-6">
-          <p class="text-gray-400 text-sm">Select a task to edit</p>
-        </div>
-      </div>
-    `
+    return html`<div class="w-[340px] h-full border-l border-[var(--color-things-divider)] bg-[var(--color-things-bg)] hidden lg:flex"></div>`
   }
 
   return html`
-    <div class="w-80 h-full border-l border-gray-200 bg-white flex flex-col">
-      <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-        <h3 class="text-sm font-medium text-gray-900 truncate flex-1">${task.title}</h3>
-        <button class="ml-2 text-gray-400 hover:text-gray-600" @click=${onClose}>
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    <div class="w-[340px] h-full border-l border-[var(--color-things-divider)] bg-[var(--color-things-bg)] flex flex-col">
+      <div class="px-6 pt-6 pb-4 flex items-center justify-between">
+        <h3 class="text-[13px] font-medium text-[var(--color-things-secondary)]">Details</h3>
+        <button class="w-6 h-6 flex items-center justify-center text-[var(--color-things-muted)] hover:text-[var(--color-things-text)] rounded transition-colors" @click=${onClose}>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+
+      <div class="flex-1 overflow-y-auto px-6 space-y-5">
         <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Title</label>
           <input
             type="text"
             .value=${task.title}
-            class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full text-[15px] font-medium bg-transparent border-0 focus:outline-none text-[var(--color-things-text)]"
             @change=${(e: Event) => onUpdate({ title: (e.target as HTMLInputElement).value })}
           />
         </div>
 
         <div>
-          <label class="block text-xs font-medium text-gray-500 mb-1">Notes</label>
           <textarea
             .value=${task.notes}
+            placeholder="Notes"
             rows="3"
-            class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            class="w-full text-[13px] bg-transparent border-0 focus:outline-none text-[var(--color-things-text)] placeholder:text-[var(--color-things-muted)] resize-none leading-relaxed"
             @change=${(e: Event) => onUpdate({ notes: (e.target as HTMLTextAreaElement).value })}
           ></textarea>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[12px] text-[var(--color-things-secondary)]">When</span>
             <input
               type="date"
               .value=${task.startDate ?? ''}
-              class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="text-[13px] bg-transparent border-0 focus:outline-none text-[var(--color-things-blue)] cursor-pointer"
               @change=${(e: Event) => {
                 const value = (e.target as HTMLInputElement).value
                 onUpdate({ startDate: value || null })
               }}
             />
           </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Deadline</label>
+          <div class="flex items-center justify-between">
+            <span class="text-[12px] text-[var(--color-things-secondary)]">Deadline</span>
             <input
               type="date"
               .value=${task.deadline ?? ''}
-              class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="text-[13px] bg-transparent border-0 focus:outline-none text-[var(--color-things-red)] cursor-pointer"
               @change=${(e: Event) => {
                 const value = (e.target as HTMLInputElement).value
                 onUpdate({ deadline: value || null })
               }}
             />
           </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[12px] text-[var(--color-things-secondary)]">Someday</span>
+            <input
+              type="checkbox"
+              .checked=${task.someday}
+              @change=${(e: Event) => onUpdate({ someday: (e.target as HTMLInputElement).checked })}
+            />
+          </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            .checked=${task.someday}
-            class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
-            @change=${(e: Event) => onUpdate({ someday: (e.target as HTMLInputElement).checked })}
-          />
-          <label class="text-sm text-gray-700">Someday</label>
-        </div>
-
-        <div>
-          <button
-            class="text-sm text-red-500 hover:text-red-700"
-            @click=${onDelete}
-          >
-            Delete task
-          </button>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-500 mb-2">Checklist</label>
-          <ul class="space-y-1">
-            ${task.checklist.map(item => html`
-              <li class="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  .checked=${item.checked}
-                  class="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
-                  @change=${() => onToggleChecklistItem(item.id)}
-                />
-                <span class="text-sm flex-1 ${item.checked ? 'line-through text-gray-400' : 'text-gray-700'}">${item.title}</span>
-                <button class="text-gray-400 hover:text-red-500 text-xs" @click=${() => onRemoveChecklistItem(item.id)}>×</button>
-              </li>
-            `).concat([html`
+        ${task.checklist.length > 0 || true ? html`
+          <div>
+            <div class="text-[12px] text-[var(--color-things-secondary)] mb-2">Checklist</div>
+            <ul class="space-y-1">
+              ${task.checklist.map(item => html`
+                <li class="flex items-center gap-2 group/item">
+                  <input
+                    type="checkbox"
+                    .checked=${item.checked}
+                    @change=${() => onToggleChecklistItem(item.id)}
+                  />
+                  <span class="flex-1 text-[13px] ${item.checked ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${item.title}</span>
+                  <button class="opacity-0 group-hover/item:opacity-100 text-[var(--color-things-muted)] hover:text-[var(--color-things-red)] transition-opacity" @click=${() => onRemoveChecklistItem(item.id)}>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </li>
+              `)}
               <li>
                 <input
                   type="text"
                   placeholder="Add item..."
-                  class="w-full px-2 py-1 text-sm border-0 border-b border-gray-200 focus:outline-none focus:border-blue-500"
+                  class="w-full text-[13px] bg-transparent border-0 border-b border-[var(--color-things-divider)] focus:outline-none focus:border-[var(--color-things-blue)] py-1 placeholder:text-[var(--color-things-muted)]"
                   @keydown=${(e: KeyboardEvent) => {
                     if (e.key === 'Enter') {
                       const input = e.target as HTMLInputElement
@@ -129,9 +114,18 @@ export function renderTaskDetail(
                   }}
                 />
               </li>
-            `])}
-          </ul>
-        </div>
+            </ul>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="px-6 py-4">
+        <button
+          class="text-[13px] text-[var(--color-things-red)] hover:opacity-80 transition-opacity"
+          @click=${onDelete}
+        >
+          Delete Task
+        </button>
       </div>
     </div>
   `
