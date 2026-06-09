@@ -1,4 +1,5 @@
 import type { ProjectColor } from './colors'
+import type { TaskData } from './task'
 
 export interface TagData {
   id: string
@@ -20,4 +21,10 @@ export function createTag(overrides: Partial<TagData> = {}): TagData {
     updatedAt: now,
     ...overrides,
   }
+}
+
+export function cascadeTagDeletion(tasks: TaskData[], tagId: string): TaskData[] {
+  return tasks
+    .filter(t => t.tags.includes(tagId))
+    .map(t => ({ ...t, tags: t.tags.filter(id => id !== tagId), updatedAt: new Date().toISOString() }))
 }

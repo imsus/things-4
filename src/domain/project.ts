@@ -1,4 +1,5 @@
 import type { ProjectColor } from './colors'
+import type { TaskData } from './task'
 
 export interface ProjectData {
   id: string
@@ -20,4 +21,10 @@ export function createProject(overrides: Partial<ProjectData> = {}): ProjectData
     updatedAt: now,
     ...overrides,
   }
+}
+
+export function cascadeProjectDeletion(tasks: TaskData[], projectId: string): TaskData[] {
+  return tasks
+    .filter(t => t.projectId === projectId)
+    .map(t => ({ ...t, projectId: null, updatedAt: new Date().toISOString() }))
 }

@@ -85,3 +85,21 @@ _Avoid_: Deferred, parked
 **ProjectColor**:
 An enum of 12 predefined colors (red, orange, yellow, green, mint, teal, cyan, blue, purple, pink, gray, brown) used by both Projects and Tags.
 _Avoid_: Color scheme, palette
+
+### Architectural
+
+**Application Service**:
+Orchestrates use cases. Owns view state, calls domain functions and repository, notifies subscribers on state change. The seam between presentation and domain.
+_Avoid_: Controller, manager, handler
+
+**Repository**:
+Persistence abstraction. Four methods: get, save, query, mutate. Mutate throws on not-found.
+_Avoid_: DAO, store, data access
+
+**Bucket**:
+A scheduling bucket filter value (Inbox, Today, Upcoming, Anytime, Someday, Logbook). Passed to Repository.query() to retrieve matching Tasks.
+_Avoid_: Filter, view, list
+
+**Cascade**:
+A pure domain function that produces updated entities when a parent is deleted (e.g., cascadeProjectDeletion moves Tasks to Inbox).
+_Avoid_: Cleanup, propagation
