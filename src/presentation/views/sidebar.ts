@@ -79,12 +79,12 @@ export function renderSidebar(
         <ul class="space-y-0">
           ${projects.map(p => html`
             <li>
-              <a href="#/projects/${p.id}" class="flex items-center gap-2.5 px-2 py-[6px] lg:py-[4px] rounded text-[13px] transition-colors
+              <a href="#/projects/${p.id}" class="flex items-center gap-2.5 px-2 py-[6px] lg:py-[4px] rounded text-[13px] transition-colors min-w-0
                 ${currentPath === `/projects/${p.id}` ? 'bg-[var(--color-things-hover)] text-[var(--color-things-text)] font-medium' : 'text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] hover:bg-[var(--color-things-hover)]'}">
-                <span class="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center" style="background: ${getColorVar(p.color)}20">
+                <span class="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center flex-shrink-0" style="background: ${getColorVar(p.color)}20">
                   <svg class="w-[12px] h-[12px]" viewBox="0 0 24 24" fill="${getColorVar(p.color)}"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
                 </span>
-                ${p.name}
+                <span class="truncate">${p.name}</span>
               </a>
             </li>
           `)}
@@ -99,12 +99,12 @@ export function renderSidebar(
         <ul class="space-y-0">
           ${tags.map(t => html`
             <li>
-              <a href="#/tags/${t.id}" class="flex items-center gap-2.5 px-2 py-[6px] lg:py-[4px] rounded text-[13px] transition-colors
+              <a href="#/tags/${t.id}" class="flex items-center gap-2.5 px-2 py-[6px] lg:py-[4px] rounded text-[13px] transition-colors min-w-0
                 ${currentPath === `/tags/${t.id}` ? 'bg-[var(--color-things-hover)] text-[var(--color-things-text)] font-medium' : 'text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] hover:bg-[var(--color-things-hover)]'}">
-                <span class="w-[18px] h-[18px] rounded-full flex items-center justify-center" style="background: ${getColorVar(t.color)}20">
+                <span class="w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0" style="background: ${getColorVar(t.color)}20">
                   <span class="w-[8px] h-[8px] rounded-full" style="background: ${getColorVar(t.color)}"></span>
                 </span>
-                ${t.name}
+                <span class="truncate">${t.name}</span>
               </a>
             </li>
           `)}
@@ -114,7 +114,7 @@ export function renderSidebar(
       <div class="px-3 py-3 border-t border-[var(--color-things-divider)]">
         <button class="flex items-center gap-2 text-[13px] text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] transition-colors px-2" @click=${onNewProject}>
           <svg class="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-          New List
+          New Project
         </button>
       </div>
     </aside>

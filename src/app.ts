@@ -45,7 +45,6 @@ router.listen(() => {
   expandedTask = null
   searchQuery = ''
   sidebarOpen = false
-  console.log('[Router] navigate to', currentPath)
   loadTasksForCurrentView()
   renderApp()
 })
@@ -61,14 +60,11 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 
   if (e.key === 'n' || e.key === 'N') {
     e.preventDefault()
-    console.log('[Keyboard] N pressed')
     const input = document.querySelector('input[placeholder="New task..."]') as HTMLInputElement | null
     if (input) input.focus()
   } else if (e.key === 'Escape') {
-    console.log('[Keyboard] Escape pressed')
     collapseTask()
   } else if ((e.key === 'Delete' || e.key === 'Backspace') && expandedTaskId) {
-    console.log('[Keyboard] Delete pressed')
     handleDeleteTask()
   }
 })
@@ -81,7 +77,6 @@ function loadTasksForCurrentView() {
 
   const projectId = extractProjectId(currentPath)
   const tagId = extractTagId(currentPath)
-  console.log('[View] load tasks for', currentPath, { projectId, tagId })
 
   if (projectId) {
     unsubscribeCurrentView = liveQuery(() =>
@@ -187,7 +182,7 @@ function renderApp() {
 
       <div class="flex-1 flex flex-col h-full overflow-hidden">
         <header class="px-6 lg:px-12 pt-8 lg:pt-12 pb-4 lg:pb-6 flex items-center gap-3">
-          <button class="lg:hidden w-8 h-8 flex items-center justify-center text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)]" @click=${() => { sidebarOpen = !sidebarOpen; renderApp() }}>
+          <button class="lg:hidden w-8 h-8 flex items-center justify-center text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-things-accent)] rounded" @click=${() => { sidebarOpen = !sidebarOpen; renderApp() }}>
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
           </button>
           <div class="flex items-center gap-3 flex-1">
@@ -251,7 +246,7 @@ function renderTaskItem(task: TaskData) {
   const hasIcon = hasNotes || hasChecklist || task.startDate || task.deadline
 
   if (isExpanded && expandedTask) {
-    return renderExpandedTask(expandedTask, projectName)
+    return renderExpandedTask(expandedTask)
   }
 
   return html`
@@ -268,8 +263,8 @@ function renderTaskItem(task: TaskData) {
         ${isCompleted ? html`<svg class="w-[10px] h-[10px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>` : ''}
       </button>
       <div class="flex-1 min-w-0">
-        <span class="text-[15px] leading-snug ${isCompleted ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${task.title}</span>
-        ${projectName ? html`<div class="text-[12px] lg:text-[11px] text-[var(--color-things-secondary)] mt-0.5">${projectName}</div>` : ''}
+        <span class="text-[15px] leading-snug truncate ${isCompleted ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${task.title}</span>
+        ${projectName ? html`<div class="text-[12px] lg:text-[11px] text-[var(--color-things-secondary)] mt-0.5 truncate">${projectName}</div>` : ''}
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
         ${task.someday ? html`<span class="text-[12px] lg:text-[11px] text-[var(--color-things-secondary)]">Someday</span>` : ''}
@@ -291,7 +286,7 @@ function renderTaskItem(task: TaskData) {
   `
 }
 
-function renderExpandedTask(task: TaskData, _projectName: string) {
+function renderExpandedTask(task: TaskData) {
   return html`
     <li class="px-3 lg:px-4 py-4 rounded-lg bg-[var(--color-things-hover-subtle)] mb-1">
       <div class="flex items-start gap-3 lg:gap-4">
@@ -308,6 +303,7 @@ function renderExpandedTask(task: TaskData, _projectName: string) {
         <div class="flex-1 min-w-0">
           <input
             type="text"
+            aria-label="Task title"
             .value=${task.title}
             class="w-full text-[20px] font-semibold bg-transparent border-0 focus:outline-none text-[var(--color-things-text)]"
             @change=${(e: Event) => handleUpdateTask({ title: (e.target as HTMLInputElement).value })}
@@ -393,7 +389,6 @@ async function handleTaskClick(id: string) {
     collapseTask()
     return
   }
-  console.log('[Task] expand', id)
   expandedTaskId = id
   expandedTask = (await taskService.getById(id)) ?? null
   renderApp()
@@ -406,7 +401,6 @@ function collapseTask() {
 }
 
 async function handleNewTask(title: string, projectId: string | null = null) {
-  console.log('[Task] create', { title, projectId })
   await taskService.create(title, projectId)
 }
 
@@ -414,7 +408,6 @@ async function handleToggleComplete(id: string) {
   const task = await taskService.getById(id)
   if (!task) return
   if (task.completedAt) {
-    console.log('[Task] uncomplete', id)
     await taskService.uncomplete(id)
     showToast('Task restored', async () => {
       await taskService.complete(id)
@@ -424,7 +417,6 @@ async function handleToggleComplete(id: string) {
       }
     })
   } else {
-    console.log('[Task] complete', id)
     await taskService.complete(id)
     showToast('Task completed', async () => {
       await taskService.uncomplete(id)
@@ -442,7 +434,6 @@ async function handleToggleComplete(id: string) {
 
 async function handleUpdateTask(changes: Partial<TaskData>) {
   if (!expandedTaskId) return
-  console.log('[Task] update', expandedTaskId, changes)
   await taskService.update(expandedTaskId, changes)
   expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
@@ -451,20 +442,17 @@ async function handleUpdateTask(changes: Partial<TaskData>) {
 async function handleDeleteTask() {
   if (!expandedTaskId) return
   const id = expandedTaskId
-  console.log('[Task] delete', id)
   await taskService.delete(id)
   expandedTaskId = null
   expandedTask = null
   renderApp()
   showToast('Task deleted', async () => {
-    console.log('[Task] restore', id)
     await taskService.restore(id)
   })
 }
 
 async function handleAddChecklistItem(title: string) {
   if (!expandedTaskId) return
-  console.log('[Checklist] add', expandedTaskId, title)
   await taskService.addChecklistItem(expandedTaskId, title)
   expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
@@ -472,7 +460,6 @@ async function handleAddChecklistItem(title: string) {
 
 async function handleToggleChecklistItem(itemId: string) {
   if (!expandedTaskId) return
-  console.log('[Checklist] toggle', expandedTaskId, itemId)
   await taskService.toggleChecklistItem(expandedTaskId, itemId)
   expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
@@ -480,26 +467,21 @@ async function handleToggleChecklistItem(itemId: string) {
 
 async function handleRemoveChecklistItem(itemId: string) {
   if (!expandedTaskId) return
-  console.log('[Checklist] remove', expandedTaskId, itemId)
   await taskService.removeChecklistItem(expandedTaskId, itemId)
   expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
 }
 
 async function handleNewProject() {
-  console.log('[Project] open create dialog')
   const result = await showProjectDialog()
   if (result) {
-    console.log('[Project] create', result)
     await projectService.create(result.name, result.color)
   }
 }
 
 async function handleNewTag() {
-  console.log('[Tag] open create dialog')
   const result = await showTagDialog()
   if (result) {
-    console.log('[Tag] create', result)
     await tagService.create(result.name, result.color)
   }
 }
