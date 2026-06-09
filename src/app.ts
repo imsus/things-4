@@ -28,6 +28,7 @@ let cachedProjects: ProjectData[] = []
 let cachedTags: TagData[] = []
 let searchQuery = ''
 let unsubscribeCurrentView: { unsubscribe: () => void } | null = null
+let sidebarOpen = false
 
 router.addRoute('/inbox')
 router.addRoute('/today')
@@ -43,6 +44,7 @@ router.listen(() => {
   expandedTaskId = null
   expandedTask = null
   searchQuery = ''
+  sidebarOpen = false
   console.log('[Router] navigate to', currentPath)
   loadTasksForCurrentView()
   renderApp()
@@ -176,16 +178,24 @@ function renderApp() {
   const viewIcon = getViewIcon(currentPath)
 
   render(html`
-    <div class="flex h-screen bg-[var(--color-things-bg)]">
-      ${renderSidebar(currentPath, cachedProjects, cachedTags, handleNewProject, handleNewTag)}
+    <div class="flex h-screen bg-[var(--color-things-bg)] relative">
+      ${renderSidebar(currentPath, cachedProjects, cachedTags, handleNewProject, handleNewTag, sidebarOpen, () => { sidebarOpen = false; renderApp() })}
+
+      ${sidebarOpen ? html`
+        <div class="fixed inset-0 bg-black/20 z-30 lg:hidden" @click=${() => { sidebarOpen = false; renderApp() }}></div>
+      ` : ''}
+
       <div class="flex-1 flex flex-col h-full overflow-hidden">
-        <header class="px-12 pt-12 pb-6">
-          <div class="flex items-center gap-3">
-            ${viewIcon ? html`<span class="text-[28px]">${viewIcon}</span>` : ''}
-            <h1 class="text-[28px] font-bold text-[var(--color-things-text)] tracking-tight">${getViewName(currentPath)}</h1>
+        <header class="px-6 lg:px-12 pt-8 lg:pt-12 pb-4 lg:pb-6 flex items-center gap-3">
+          <button class="lg:hidden w-8 h-8 flex items-center justify-center text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)]" @click=${() => { sidebarOpen = !sidebarOpen; renderApp() }}>
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+          </button>
+          <div class="flex items-center gap-3 flex-1">
+            ${viewIcon ? html`<span class="text-[24px] lg:text-[28px]">${viewIcon}</span>` : ''}
+            <h1 class="text-[24px] lg:text-[28px] font-bold text-[var(--color-things-text)] tracking-tight">${getViewName(currentPath)}</h1>
           </div>
         </header>
-        <div class="flex-1 overflow-y-auto px-12 pb-8">
+        <div class="flex-1 overflow-y-auto px-6 lg:px-12 pb-6 lg:pb-8">
           ${filteredTasks.length === 0
             ? html`<p class="text-[var(--color-things-muted)] text-[15px] mt-4">${searchQuery ? 'No matching tasks.' : 'No tasks yet.'}</p>`
             : html`
@@ -194,7 +204,7 @@ function renderApp() {
               </ul>
             `}
         </div>
-        <div class="px-12 py-4">
+        <div class="px-6 lg:px-12 py-3 lg:py-4">
           <input
             type="text"
             placeholder="New task..."
@@ -230,9 +240,10 @@ function renderTaskItem(task: TaskData) {
   }
 
   return html`
-    <li class="flex items-start gap-4 px-4 py-[10px] rounded-lg hover:bg-[#F8F8FA] cursor-pointer transition-colors"
+    <li class="flex items-start gap-3 lg:gap-4 px-3 lg:px-4 py-[10px] rounded-lg hover:bg-[var(--color-things-hover-subtle)] cursor-pointer transition-colors"
         @click=${() => handleTaskClick(task.id)}>
       <button
+        aria-label="${isCompleted ? 'Mark task as incomplete' : 'Mark task as complete'}"
         class="mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
           ${isCompleted
             ? 'bg-[var(--color-things-accent)] border-[var(--color-things-accent)]'
@@ -247,7 +258,7 @@ function renderTaskItem(task: TaskData) {
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
         ${task.someday ? html`<span class="text-[11px] text-[var(--color-things-secondary)]">Someday</span>` : ''}
-        ${task.startDate ? html`<span class="text-[11pxpx] text-[var(--color-things-accent)]">${formatDate(task.startDate)}</span>` : ''}
+        ${task.startDate ? html`<span class="text-[11px] text-[var(--color-things-accent)]">${formatDate(task.startDate)}</span>` : ''}
         ${task.deadline ? html`<span class="text-[11px] text-[var(--color-things-red)]">${formatDate(task.deadline)}</span>` : ''}
         ${task.tags.length > 0 ? html`
           <div class="flex gap-1">
@@ -267,9 +278,10 @@ function renderTaskItem(task: TaskData) {
 
 function renderExpandedTask(task: TaskData, _projectName: string) {
   return html`
-    <li class="px-4 py-4 rounded-lg bg-[#F8F8FA] mb-1">
-      <div class="flex items-start gap-4">
+    <li class="px-3 lg:px-4 py-4 rounded-lg bg-[var(--color-things-hover-subtle)] mb-1">
+      <div class="flex items-start gap-3 lg:gap-4">
         <button
+          aria-label="${task.completedAt ? 'Mark task as incomplete' : 'Mark task as complete'}"
           class="mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
             ${task.completedAt
               ? 'bg-[var(--color-things-accent)] border-[var(--color-things-accent)]'
@@ -304,48 +316,47 @@ function renderExpandedTask(task: TaskData, _projectName: string) {
         </div>
       </div>
 
-      ${task.checklist.length > 0 || true ? html`
-        <div class="mt-4 ml-8 space-y-0">
-          ${task.checklist.map(item => html`
-            <div class="flex items-center gap-3 py-1.5 border-b border-[var(--color-things-divider)] last:border-0 group/item">
-              <button
-                class="w-[16px] h-[16px] rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150
-                  ${item.checked
-                    ? 'bg-[var(--color-things-checklist-circle)] border-[var(--color-things-checklist-circle)]'
-                    : 'border-[var(--color-things-checklist-circle)]'}"
-                @click=${() => handleToggleChecklistItem(item.id)}
-              >
-                ${item.checked ? html`<svg class="w-[8px] h-[8px] text-white" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" /></svg>` : ''}
-              </button>
-              <span class="flex-1 text-[15px] ${item.checked ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${item.title}</span>
-              <button class="opacity-0 group-hover/item:opacity-100 text-[var(--color-things-muted)] hover:text-[var(--color-things-red)] transition-opacity" @click=${() => handleRemoveChecklistItem(item.id)}>
-                <svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          `)}
-          <div class="flex items-center gap-3 py-1.5">
-            <span class="w-[16px] h-[16px] rounded-full border-2 border-[var(--color-things-checklist-circle)] flex-shrink-0"></span>
-            <input
-              type="text"
-              placeholder="Add item..."
-              class="flex-1 text-[15px] bg-transparent border-0 focus:outline-none placeholder:text-[var(--color-things-muted)]"
-              @keydown=${(e: KeyboardEvent) => {
-                if (e.key === 'Enter') {
-                  const input = e.target as HTMLInputElement
-                  const title = input.value.trim()
-                  if (title) {
-                    handleAddChecklistItem(title)
-                    input.value = ''
-                  }
-                }
-              }}
-            />
+      <div class="mt-4 ml-6 lg:ml-8 space-y-0">
+        ${task.checklist.map(item => html`
+          <div class="flex items-center gap-3 py-1.5 border-b border-[var(--color-things-divider)] last:border-0 group/item">
+            <button
+              aria-label="${item.checked ? 'Mark item as incomplete' : 'Mark item as complete'}"
+              class="w-[16px] h-[16px] rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150
+                ${item.checked
+                  ? 'bg-[var(--color-things-checklist-circle)] border-[var(--color-things-checklist-circle)]'
+                  : 'border-[var(--color-things-checklist-circle)]'}"
+              @click=${() => handleToggleChecklistItem(item.id)}
+            >
+              ${item.checked ? html`<svg class="w-[8px] h-[8px] text-white" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" /></svg>` : ''}
+            </button>
+            <span class="flex-1 text-[15px] ${item.checked ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${item.title}</span>
+            <button aria-label="Remove checklist item" class="opacity-0 group-hover/item:opacity-100 text-[var(--color-things-muted)] hover:text-[var(--color-things-red)] transition-opacity" @click=${() => handleRemoveChecklistItem(item.id)}>
+              <svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
           </div>
+        `)}
+        <div class="flex items-center gap-3 py-1.5">
+          <span class="w-[16px] h-[16px] rounded-full border-2 border-[var(--color-things-checklist-circle)] flex-shrink-0"></span>
+          <input
+            type="text"
+            placeholder="Add item..."
+            class="flex-1 text-[15px] bg-transparent border-0 focus:outline-none placeholder:text-[var(--color-things-muted)]"
+            @keydown=${(e: KeyboardEvent) => {
+              if (e.key === 'Enter') {
+                const input = e.target as HTMLInputElement
+                const title = input.value.trim()
+                if (title) {
+                  handleAddChecklistItem(title)
+                  input.value = ''
+                }
+              }
+            }}
+          />
         </div>
-      ` : ''}
+      </div>
 
-      <div class="mt-4 ml-8 flex items-center gap-4 text-[var(--color-things-muted)]">
-        <button class="flex items-center gap-1.5 text-[11px] hover:text-[var(--color-things-text)] transition-colors" @click=${() => handleDeleteTask()}>
+      <div class="mt-4 ml-6 lg:ml-8 flex items-center gap-4 text-[var(--color-things-muted)]">
+        <button aria-label="Delete task" class="flex items-center gap-1.5 text-[11px] hover:text-[var(--color-things-text)] transition-colors" @click=${() => handleDeleteTask()}>
           <svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
           Delete
         </button>

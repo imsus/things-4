@@ -5,7 +5,7 @@
   --color-things-sidebar: #F5F5F7;
   --color-things-text: #1C1C1E;
   --color-things-secondary: #8E8E93;
-  --color-things-muted: #AEAEB2;
+  --color-things-muted: #767676;
   --color-things-accent: #007AFF;
   --color-things-yellow: #FFCC00;
   --color-things-red: #FF3B30;
@@ -15,6 +15,7 @@
   --color-things-purple: #AF52DE;
   --color-things-divider: #E5E5EA;
   --color-things-hover: #F2F2F7;
+  --color-things-hover-subtle: #F8F8FA;
   --color-things-card-bg: #F2F2F7;
   --color-things-checkbox-border: #C7C7CC;
   --color-things-checklist-circle: #007AFF;

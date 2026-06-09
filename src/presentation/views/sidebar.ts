@@ -50,10 +50,18 @@ export function renderSidebar(
   tags: TagData[] = [],
   onNewProject: () => void,
   onNewTag: () => void,
+  isOpen: boolean = false,
+  onClose: () => void = () => {},
 ): TemplateResult {
   return html`
-    <aside class="w-[250px] h-full bg-[var(--color-things-sidebar)] flex flex-col overflow-y-auto select-none border-r border-[var(--color-things-divider)]">
-      <nav class="flex-1 px-3 pt-3 pb-2">
+    <aside class="fixed lg:static inset-y-0 left-0 z-40 w-[250px] h-full bg-[var(--color-things-sidebar)] flex flex-col overflow-y-auto select-none border-r border-[var(--color-things-divider)] transform transition-transform duration-200 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0">
+      <div class="flex items-center justify-between px-3 pt-3 pb-1 lg:hidden">
+        <span class="text-[15px] font-semibold text-[var(--color-things-text)]">Things</span>
+        <button class="w-6 h-6 flex items-center justify-center text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)]" @click=${onClose}>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <nav class="flex-1 px-3 pt-2 lg:pt-3 pb-2">
         <ul class="space-y-0">
           ${NAV_ITEMS.map(item => navItem(item, currentPath))}
         </ul>
@@ -104,7 +112,7 @@ export function renderSidebar(
       </nav>
 
       <div class="px-3 py-3 border-t border-[var(--color-things-divider)]">
-        <button class="flex items-center gap-2 text-[13px] text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] transition-colors px-2">
+        <button class="flex items-center gap-2 text-[13px] text-[var(--color-things-secondary)] hover:text-[var(--color-things-text)] transition-colors px-2" @click=${onNewProject}>
           <svg class="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
           New List
         </button>

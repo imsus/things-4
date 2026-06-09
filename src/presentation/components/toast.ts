@@ -18,7 +18,7 @@ export function showToast(message: string, onUndo: () => void, duration = 5000) 
   el.className = 'flex items-center gap-3 px-5 py-3.5 bg-[var(--color-things-text)] text-white rounded-xl shadow-lg text-[13px] min-w-[300px]'
   el.innerHTML = `
     <span class="flex-1">${escapeHtml(message)}</span>
-    <button class="text-[var(--color-things-blue)] hover:opacity-80 font-medium">Undo</button>
+    <button class="text-[var(--color-things-accent)] hover:opacity-80 font-medium">Undo</button>
   `
 
   const undoBtn = el.querySelector('button')!

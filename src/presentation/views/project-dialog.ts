@@ -26,7 +26,7 @@ export function showProjectDialog(): Promise<ProjectDialogResult | null> {
           <input
             type="text"
             placeholder="Project name"
-            class="w-full text-[15px] bg-transparent border-0 border-b border-[var(--color-things-divider)] focus:outline-none focus:border-[var(--color-things-blue)] pb-2 mb-6 placeholder:text-[var(--color-things-muted)]"
+            class="w-full text-[15px] bg-transparent border-0 border-b border-[var(--color-things-divider)] focus:outline-none focus:border-[var(--color-things-accent)] pb-2 mb-6 placeholder:text-[var(--color-things-muted)]"
             .value=${name}
             @input=${(e: Event) => { name = (e.target as HTMLInputElement).value }}
           />
@@ -45,7 +45,7 @@ export function showProjectDialog(): Promise<ProjectDialogResult | null> {
               @click=${() => { cleanup(); resolve(null) }}
             >Cancel</button>
             <button
-              class="px-5 py-2 text-[14px] bg-[var(--color-things-blue)] text-white rounded-lg hover:opacity-90 transition-opacity"
+              class="px-5 py-2 text-[14px] bg-[var(--color-things-accent)] text-white rounded-lg hover:opacity-90 transition-opacity"
               @click=${() => { cleanup(); resolve({ name, color }) }}
             >Create</button>
           </div>
