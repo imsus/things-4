@@ -1,8 +1,6 @@
 import { render, html } from 'lit-html'
 import { Router } from './presentation/router'
 import { renderSidebar } from './presentation/views/sidebar'
-import { renderTaskDetail } from './presentation/views/task-detail'
-import { renderSearch } from './presentation/components/search'
 import { showProjectDialog } from './presentation/views/project-dialog'
 import { showTagDialog } from './presentation/views/tag-dialog'
 import { TaskService } from './services/task-service'
@@ -23,8 +21,8 @@ const projectService = new ProjectService()
 const tagService = new TagService()
 
 let currentPath = '/inbox'
-let selectedTaskId: string | null = null
-let selectedTask: TaskData | null = null
+let expandedTaskId: string | null = null
+let expandedTask: TaskData | null = null
 let cachedTasks: TaskData[] = []
 let cachedProjects: ProjectData[] = []
 let cachedTags: TagData[] = []
@@ -42,17 +40,15 @@ router.addRoute('/tags/:id', ['id'])
 
 router.listen(() => {
   currentPath = window.location.hash.slice(1) || '/inbox'
-  selectedTaskId = null
-  selectedTask = null
+  expandedTaskId = null
+  expandedTask = null
   searchQuery = ''
   console.log('[Router] navigate to', currentPath)
   loadTasksForCurrentView()
   renderApp()
 })
 
-// Keyboard shortcuts
 document.addEventListener('keydown', (e: KeyboardEvent) => {
-  // Don't trigger shortcuts when typing in inputs
   const target = e.target as HTMLElement
   if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
     if (e.key === 'Escape') {
@@ -63,22 +59,19 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 
   if (e.key === 'n' || e.key === 'N') {
     e.preventDefault()
-    console.log('[Keyboard] N pressed → focus new task input')
+    console.log('[Keyboard] N pressed')
     const input = document.querySelector('input[placeholder="New task..."]') as HTMLInputElement | null
     if (input) input.focus()
   } else if (e.key === 'Escape') {
-    console.log('[Keyboard] Escape pressed → close detail')
-    handleCloseDetail()
-  } else if (e.key === 'Delete' || e.key === 'Backspace') {
-    if (selectedTaskId) {
-      console.log('[Keyboard] Delete pressed → delete task', selectedTaskId)
-      handleDeleteTask()
-    }
+    console.log('[Keyboard] Escape pressed')
+    collapseTask()
+  } else if ((e.key === 'Delete' || e.key === 'Backspace') && expandedTaskId) {
+    console.log('[Keyboard] Delete pressed')
+    handleDeleteTask()
   }
 })
 
 function loadTasksForCurrentView() {
-  // Unsubscribe from previous view's live query
   if (unsubscribeCurrentView) {
     unsubscribeCurrentView.unsubscribe()
     unsubscribeCurrentView = null
@@ -90,11 +83,11 @@ function loadTasksForCurrentView() {
 
   if (projectId) {
     unsubscribeCurrentView = liveQuery(() =>
-      db.tasks
-        .where('projectId')
-        .equals(projectId)
-        .and(t => t.completedAt === null && t.deletedAt === null && !t.heading)
-        .sortBy('order')
+      db.tasks.toArray().then(tasks =>
+        tasks
+          .filter(t => t.completedAt === null && t.deletedAt === null && t.projectId === projectId && !t.heading)
+          .sort((a, b) => a.order - b.order)
+      )
     ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else if (tagId) {
     unsubscribeCurrentView = taskService.getTasksByTag(tagId).subscribe(tasks => { cachedTasks = tasks; renderApp() })
@@ -109,27 +102,22 @@ function loadTasksForCurrentView() {
   } else if (currentPath === '/logbook') {
     unsubscribeCurrentView = taskService.getCompletedTasks().subscribe(tasks => { cachedTasks = tasks; renderApp() })
   } else {
-    // Inbox view (default)
     unsubscribeCurrentView = liveQuery(() =>
-      db.tasks
-        .toArray()
-        .then(tasks => tasks
+      db.tasks.toArray().then(tasks =>
+        tasks
           .filter(t => t.completedAt === null && t.deletedAt === null && t.projectId === null && !t.heading)
           .sort((a, b) => a.order - b.order)
-        )
+      )
     ).subscribe(tasks => { cachedTasks = tasks; renderApp() })
   }
 }
 
-// Subscribe to projects and tags
 liveQuery(() => db.projects.orderBy('order').toArray()).subscribe(projects => {
-  console.log('[Data] projects updated', projects.length)
   cachedProjects = projects
   renderApp()
 })
 
 liveQuery(() => db.tags.orderBy('order').toArray()).subscribe(tags => {
-  console.log('[Data] tags updated', tags.length)
   cachedTags = tags
   renderApp()
 })
@@ -159,7 +147,13 @@ function getViewName(path: string): string {
     const tag = cachedTags.find(t => t.id === extractTagId(path))
     return tag?.name ?? 'Tag'
   }
-  return 'Things 4'
+  return 'Things'
+}
+
+function getViewIcon(path: string): string {
+  if (path === '/today') return '⭐'
+  if (path.startsWith('/projects/')) return '🔵'
+  return ''
 }
 
 function getFilteredTasks(): TaskData[] {
@@ -171,31 +165,40 @@ function getFilteredTasks(): TaskData[] {
   )
 }
 
+function getProjectName(projectId: string | null): string {
+  if (!projectId) return ''
+  const project = cachedProjects.find(p => p.id === projectId)
+  return project?.name ?? ''
+}
+
 function renderApp() {
   const filteredTasks = getFilteredTasks()
+  const viewIcon = getViewIcon(currentPath)
 
   render(html`
     <div class="flex h-screen bg-[var(--color-things-bg)]">
       ${renderSidebar(currentPath, cachedProjects, cachedTags, handleNewProject, handleNewTag)}
       <div class="flex-1 flex flex-col h-full overflow-hidden">
-        <header class="px-8 pt-8 pb-2 flex items-end justify-between">
-          <h2 class="text-[26px] font-semibold text-[var(--color-things-text)] tracking-tight">${getViewName(currentPath)}</h2>
-          ${renderSearch(searchQuery, handleSearch)}
+        <header class="px-12 pt-12 pb-6">
+          <div class="flex items-center gap-3">
+            ${viewIcon ? html`<span class="text-[28px]">${viewIcon}</span>` : ''}
+            <h1 class="text-[28px] font-bold text-[var(--color-things-text)] tracking-tight">${getViewName(currentPath)}</h1>
+          </div>
         </header>
-        <div class="flex-1 overflow-y-auto px-8 pb-4">
+        <div class="flex-1 overflow-y-auto px-12 pb-8">
           ${filteredTasks.length === 0
-            ? html`<p class="text-[var(--color-things-muted)] text-[14px] mt-4">${searchQuery ? 'No matching tasks.' : 'No tasks yet.'}</p>`
+            ? html`<p class="text-[var(--color-things-muted)] text-[15px] mt-4">${searchQuery ? 'No matching tasks.' : 'No tasks yet.'}</p>`
             : html`
               <ul class="space-y-0">
                 ${filteredTasks.map(task => renderTaskItem(task))}
               </ul>
             `}
         </div>
-        <div class="px-8 py-4">
+        <div class="px-12 py-4">
           <input
             type="text"
             placeholder="New task..."
-            class="w-full px-0 py-1 text-[14px] bg-transparent border-0 border-b border-[var(--color-things-divider)] focus:outline-none focus:border-[var(--color-things-blue)] placeholder:text-[var(--color-things-muted)]"
+            class="w-full px-0 py-2 text-[15px] bg-transparent border-0 border-b border-[var(--color-things-divider)] focus:outline-none focus:border-[var(--color-things-accent)] placeholder:text-[var(--color-things-muted)]"
             @keydown=${(e: KeyboardEvent) => {
               if (e.key === 'Enter') {
                 const input = e.target as HTMLInputElement
@@ -210,44 +213,142 @@ function renderApp() {
           />
         </div>
       </div>
-      ${renderTaskDetail(
-        selectedTask,
-        handleCloseDetail,
-        handleUpdateTask,
-        handleDeleteTask,
-        handleAddChecklistItem,
-        handleToggleChecklistItem,
-        handleRemoveChecklistItem,
-      )}
     </div>
   `, app)
 }
 
 function renderTaskItem(task: TaskData) {
   const isCompleted = task.completedAt !== null
-  const hasMeta = task.tags.length > 0 || task.startDate !== null || task.deadline !== null
+  const isExpanded = expandedTaskId === task.id
+  const projectName = getProjectName(task.projectId)
+  const hasNotes = task.notes.length > 0
+  const hasChecklist = task.checklist.length > 0
+  const hasIcon = hasNotes || hasChecklist || task.startDate || task.deadline
+
+  if (isExpanded && expandedTask) {
+    return renderExpandedTask(expandedTask, projectName)
+  }
 
   return html`
-    <li class="flex items-start gap-3 px-2 py-[9px] rounded-md hover:bg-[var(--color-things-hover)] cursor-pointer group"
+    <li class="flex items-start gap-4 px-4 py-[10px] rounded-lg hover:bg-[#F8F8FA] cursor-pointer transition-colors"
         @click=${() => handleTaskClick(task.id)}>
       <button
-        class="mt-[2px] w-[18px] h-[18px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-colors
+        class="mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
           ${isCompleted
-            ? 'bg-[var(--color-things-blue)] border-[var(--color-things-blue)]'
-            : 'border-[var(--color-things-muted)] hover:border-[var(--color-things-blue)]'}"
+            ? 'bg-[var(--color-things-accent)] border-[var(--color-things-accent)]'
+            : 'border-[var(--color-things-checkbox-border)] hover:border-[var(--color-things-accent)]'}"
         @click=${(e: Event) => { e.stopPropagation(); handleToggleComplete(task.id) }}
       >
         ${isCompleted ? html`<svg class="w-[10px] h-[10px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>` : ''}
       </button>
       <div class="flex-1 min-w-0">
-        <span class="text-[14px] leading-snug ${isCompleted ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${task.title}</span>
-        ${hasMeta ? html`
-          <div class="flex items-center gap-2 mt-1 flex-wrap">
-            ${task.startDate ? html`<span class="text-[11px] text-[var(--color-things-secondary)]">${formatDate(task.startDate)}</span>` : ''}
-            ${task.deadline ? html`<span class="text-[11px] text-[var(--color-things-red)]">${formatDate(task.deadline)}</span>` : ''}
-            ${task.tags.map(() => html`<span class="w-1.5 h-1.5 rounded-full bg-[var(--color-things-muted)]"></span>`)}
+        <span class="text-[15px] leading-snug ${isCompleted ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${task.title}</span>
+        ${projectName ? html`<div class="text-[11px] text-[var(--color-things-secondary)] mt-0.5">${projectName}</div>` : ''}
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        ${task.someday ? html`<span class="text-[11px] text-[var(--color-things-secondary)]">Someday</span>` : ''}
+        ${task.startDate ? html`<span class="text-[11pxpx] text-[var(--color-things-accent)]">${formatDate(task.startDate)}</span>` : ''}
+        ${task.deadline ? html`<span class="text-[11px] text-[var(--color-things-red)]">${formatDate(task.deadline)}</span>` : ''}
+        ${task.tags.length > 0 ? html`
+          <div class="flex gap-1">
+            ${task.tags.map(() => html`<span class="w-[6px] h-[6px] rounded-full bg-[var(--color-things-secondary)]"></span>`)}
           </div>
         ` : ''}
+        ${hasIcon ? html`
+          <span class="text-[var(--color-things-muted)]">
+            ${hasChecklist ? html`<svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>` : ''}
+            ${hasNotes ? html`<svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>` : ''}
+          </span>
+        ` : ''}
+      </div>
+    </li>
+  `
+}
+
+function renderExpandedTask(task: TaskData, _projectName: string) {
+  return html`
+    <li class="px-4 py-4 rounded-lg bg-[#F8F8FA] mb-1">
+      <div class="flex items-start gap-4">
+        <button
+          class="mt-[2px] w-[16px] h-[16px] rounded-[4px] border-[1.5px] flex-shrink-0 flex items-center justify-center transition-all duration-150
+            ${task.completedAt
+              ? 'bg-[var(--color-things-accent)] border-[var(--color-things-accent)]'
+              : 'border-[var(--color-things-checkbox-border)] hover:border-[var(--color-things-accent)]'}"
+          @click=${() => handleToggleComplete(task.id)}
+        >
+          ${task.completedAt ? html`<svg class="w-[10px] h-[10px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>` : ''}
+        </button>
+        <div class="flex-1 min-w-0">
+          <input
+            type="text"
+            .value=${task.title}
+            class="w-full text-[20px] font-semibold bg-transparent border-0 focus:outline-none text-[var(--color-things-text)]"
+            @change=${(e: Event) => handleUpdateTask({ title: (e.target as HTMLInputElement).value })}
+          />
+          ${task.notes ? html`
+            <textarea
+              .value=${task.notes}
+              placeholder="Notes"
+              rows="2"
+              class="w-full text-[13px] bg-transparent border-0 focus:outline-none text-[var(--color-things-secondary)] placeholder:text-[var(--color-things-muted)] resize-none mt-1 leading-relaxed"
+              @change=${(e: Event) => handleUpdateTask({ notes: (e.target as HTMLTextAreaElement).value })}
+            ></textarea>
+          ` : html`
+            <textarea
+              placeholder="Add notes..."
+              rows="1"
+              class="w-full text-[13px] bg-transparent border-0 focus:outline-none text-[var(--color-things-secondary)] placeholder:text-[var(--color-things-muted)] resize-none mt-1"
+              @change=${(e: Event) => handleUpdateTask({ notes: (e.target as HTMLTextAreaElement).value })}
+            ></textarea>
+          `}
+        </div>
+      </div>
+
+      ${task.checklist.length > 0 || true ? html`
+        <div class="mt-4 ml-8 space-y-0">
+          ${task.checklist.map(item => html`
+            <div class="flex items-center gap-3 py-1.5 border-b border-[var(--color-things-divider)] last:border-0 group/item">
+              <button
+                class="w-[16px] h-[16px] rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150
+                  ${item.checked
+                    ? 'bg-[var(--color-things-checklist-circle)] border-[var(--color-things-checklist-circle)]'
+                    : 'border-[var(--color-things-checklist-circle)]'}"
+                @click=${() => handleToggleChecklistItem(item.id)}
+              >
+                ${item.checked ? html`<svg class="w-[8px] h-[8px] text-white" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" /></svg>` : ''}
+              </button>
+              <span class="flex-1 text-[15px] ${item.checked ? 'line-through text-[var(--color-things-muted)]' : 'text-[var(--color-things-text)]'}">${item.title}</span>
+              <button class="opacity-0 group-hover/item:opacity-100 text-[var(--color-things-muted)] hover:text-[var(--color-things-red)] transition-opacity" @click=${() => handleRemoveChecklistItem(item.id)}>
+                <svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          `)}
+          <div class="flex items-center gap-3 py-1.5">
+            <span class="w-[16px] h-[16px] rounded-full border-2 border-[var(--color-things-checklist-circle)] flex-shrink-0"></span>
+            <input
+              type="text"
+              placeholder="Add item..."
+              class="flex-1 text-[15px] bg-transparent border-0 focus:outline-none placeholder:text-[var(--color-things-muted)]"
+              @keydown=${(e: KeyboardEvent) => {
+                if (e.key === 'Enter') {
+                  const input = e.target as HTMLInputElement
+                  const title = input.value.trim()
+                  if (title) {
+                    handleAddChecklistItem(title)
+                    input.value = ''
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="mt-4 ml-8 flex items-center gap-4 text-[var(--color-things-muted)]">
+        <button class="flex items-center gap-1.5 text-[11px] hover:text-[var(--color-things-text)] transition-colors" @click=${() => handleDeleteTask()}>
+          <svg class="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+          Delete
+        </button>
       </div>
     </li>
   `
@@ -262,16 +363,19 @@ function formatDate(dateStr: string): string {
 }
 
 async function handleTaskClick(id: string) {
-  console.log('[Task] click', id)
-  selectedTaskId = id
-  selectedTask = (await taskService.getById(id)) ?? null
+  if (expandedTaskId === id) {
+    collapseTask()
+    return
+  }
+  console.log('[Task] expand', id)
+  expandedTaskId = id
+  expandedTask = (await taskService.getById(id)) ?? null
   renderApp()
 }
 
-function handleCloseDetail() {
-  console.log('[Task] close detail panel')
-  selectedTaskId = null
-  selectedTask = null
+function collapseTask() {
+  expandedTaskId = null
+  expandedTask = null
   renderApp()
 }
 
@@ -288,8 +392,8 @@ async function handleToggleComplete(id: string) {
     await taskService.uncomplete(id)
     showToast('Task restored', async () => {
       await taskService.complete(id)
-      if (selectedTaskId === id) {
-        selectedTask = (await taskService.getById(id)) ?? null
+      if (expandedTaskId === id) {
+        expandedTask = (await taskService.getById(id)) ?? null
         renderApp()
       }
     })
@@ -298,33 +402,33 @@ async function handleToggleComplete(id: string) {
     await taskService.complete(id)
     showToast('Task completed', async () => {
       await taskService.uncomplete(id)
-      if (selectedTaskId === id) {
-        selectedTask = (await taskService.getById(id)) ?? null
+      if (expandedTaskId === id) {
+        expandedTask = (await taskService.getById(id)) ?? null
         renderApp()
       }
     })
   }
-  if (selectedTaskId === id) {
-    selectedTask = (await taskService.getById(id)) ?? null
+  if (expandedTaskId === id) {
+    expandedTask = (await taskService.getById(id)) ?? null
     renderApp()
   }
 }
 
 async function handleUpdateTask(changes: Partial<TaskData>) {
-  if (!selectedTaskId) return
-  console.log('[Task] update', selectedTaskId, changes)
-  await taskService.update(selectedTaskId, changes)
-  selectedTask = (await taskService.getById(selectedTaskId)) ?? null
+  if (!expandedTaskId) return
+  console.log('[Task] update', expandedTaskId, changes)
+  await taskService.update(expandedTaskId, changes)
+  expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
 }
 
 async function handleDeleteTask() {
-  if (!selectedTaskId) return
-  const id = selectedTaskId
+  if (!expandedTaskId) return
+  const id = expandedTaskId
   console.log('[Task] delete', id)
   await taskService.delete(id)
-  selectedTaskId = null
-  selectedTask = null
+  expandedTaskId = null
+  expandedTask = null
   renderApp()
   showToast('Task deleted', async () => {
     console.log('[Task] restore', id)
@@ -333,26 +437,26 @@ async function handleDeleteTask() {
 }
 
 async function handleAddChecklistItem(title: string) {
-  if (!selectedTaskId) return
-  console.log('[Checklist] add', selectedTaskId, title)
-  await taskService.addChecklistItem(selectedTaskId, title)
-  selectedTask = (await taskService.getById(selectedTaskId)) ?? null
+  if (!expandedTaskId) return
+  console.log('[Checklist] add', expandedTaskId, title)
+  await taskService.addChecklistItem(expandedTaskId, title)
+  expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
 }
 
 async function handleToggleChecklistItem(itemId: string) {
-  if (!selectedTaskId) return
-  console.log('[Checklist] toggle', selectedTaskId, itemId)
-  await taskService.toggleChecklistItem(selectedTaskId, itemId)
-  selectedTask = (await taskService.getById(selectedTaskId)) ?? null
+  if (!expandedTaskId) return
+  console.log('[Checklist] toggle', expandedTaskId, itemId)
+  await taskService.toggleChecklistItem(expandedTaskId, itemId)
+  expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
 }
 
 async function handleRemoveChecklistItem(itemId: string) {
-  if (!selectedTaskId) return
-  console.log('[Checklist] remove', selectedTaskId, itemId)
-  await taskService.removeChecklistItem(selectedTaskId, itemId)
-  selectedTask = (await taskService.getById(selectedTaskId)) ?? null
+  if (!expandedTaskId) return
+  console.log('[Checklist] remove', expandedTaskId, itemId)
+  await taskService.removeChecklistItem(expandedTaskId, itemId)
+  expandedTask = (await taskService.getById(expandedTaskId)) ?? null
   renderApp()
 }
 
@@ -372,10 +476,4 @@ async function handleNewTag() {
     console.log('[Tag] create', result)
     await tagService.create(result.name, result.color)
   }
-}
-
-function handleSearch(query: string) {
-  console.log('[Search]', query)
-  searchQuery = query
-  renderApp()
 }
