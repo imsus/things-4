@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-09T00:00:00Z",
+  "title": "Design System: Things 4",
+  "extensions": {
+    "colorMeta": {
+      "bg": { "role": "neutral", "displayName": "Pure White", "canonical": "#FFFFFF", "tonalRamp": ["#1C1C1E", "#2C2C2E", "#3A3A3C", "#636366", "#8E8E93", "#AEAEB2", "#D1D1D6", "#F2F2F7"] },
+      "sidebar": { "role": "neutral", "displayName": "Cloud Gray", "canonical": "#F4F4F6", "tonalRamp": ["#C7C7CC", "#D1D1D6", "#E5E5EA", "#F2F2F7", "#F4F4F6", "#F8F8FA", "#FAFAFA", "#FFFFFF"] },
+      "text": { "role": "neutral", "displayName": "Ink Black", "canonical": "#1C1C1E", "tonalRamp": ["#1C1C1E", "#2C2C2E", "#3A3A3C", "#636366", "#8E8E93", "#AEAEB2", "#D1D1D6", "#F2F2F7"] },
+      "secondary": { "role": "neutral", "displayName": "Stone Gray", "canonical": "#8E8E93", "tonalRamp": ["#3A3A3C", "#48484A", "#636366", "#8E8E93", "#AEAEB2", "#C7C7CC", "#D1D1D6", "#E5E5EA"] },
+      "muted": { "role": "neutral", "displayName": "Mist Gray", "canonical": "#AEAEB2", "tonalRamp": ["#636366", "#8E8E93", "#AEAEB2", "#C7C7CC", "#D1D1D6", "#E5E5EA", "#F2F2F7", "#F4F4F6"] },
+      "accent": { "role": "primary", "displayName": "iOS Blue", "canonical": "#007AFF", "tonalRamp": ["#003A8C", "#0051B5", "#007AFF", "#4DA3FF", "#80C1FF", "#B3D9FF", "#E6F2FF", "#F0F8FF"] },
+      "yellow": { "role": "semantic", "displayName": "Sunflower Yellow", "canonical": "#FFCC00", "tonalRamp": ["#B38F00", "#CCAA00", "#FFCC00", "#FFD633", "#FFE066", "#FFEB99", "#FFF5CC", "#FFFCE6"] },
+      "red": { "role": "semantic", "displayName": "Signal Red", "canonical": "#FF3B30", "tonalRamp": ["#B31A12", "#CC2920", "#FF3B30", "#FF645C", "#FF8D89", "#FFB5B3", "#FFDDD9", "#FFF0EE"] },
+      "green": { "role": "semantic", "displayName": "Mint Green", "canonical": "#34C759", "tonalRamp": ["#1A7A30", "#269E42", "#34C759", "#5CD47A", "#84E19B", "#ACEEBD", "#D4F9DE", "#EAFCF0"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Screen titles. One per view." },
+      "body": { "displayName": "Body", "purpose": "Task titles and primary content text." },
+      "label": { "displayName": "Label", "purpose": "Metadata, timestamps, section headers." }
+    },
+    "shadows": [
+      { "name": "floating", "value": "0 25px 50px -12px rgba(0,0,0,0.25)", "purpose": "Dialogs and modals. The only elevated surface." },
+      { "name": "toast", "value": "0 10px 25px -5px rgba(0,0,0,0.1)", "purpose": "Notification toasts. Lower than dialogs." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.25, 0.1, 0.25, 1)", "purpose": "Default easing for state transitions." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Checkbox, hover, focus transitions." },
+      { "name": "duration-normal", "value": "200ms", "purpose": "Dialog entrance, toast appearance." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Checkbox",
+      "kind": "input",
+      "refersTo": "checkbox",
+      "description": "Task completion toggle. Rounded square with checkmark on fill.",
+      "html": "<input type=\"checkbox\" class=\"ds-checkbox\" />",
+      "css": ".ds-checkbox { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; border: 2px solid #AEAEB2; border-radius: 4px; cursor: pointer; position: relative; flex-shrink: 0; transition: all 150ms ease; } .ds-checkbox:hover { border-color: #007AFF; } .ds-checkbox:checked { background: #007AFF; border-color: #007AFF; } .ds-checkbox:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 6px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }"
+    },
+    {
+      "name": "Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Sidebar navigation link with icon and label.",
+      "html": "<a href=\"#\" class=\"ds-nav-item\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z\"/></svg><span>Inbox</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 8px; font-size: 13px; color: #8E8E93; text-decoration: none; transition: all 150ms ease; } .ds-nav-item:hover { background: #E8E8ED; color: #1C1C1E; } .ds-nav-item:hover svg { color: #AEAEB2; } .ds-nav-item.active { background: #E8E8ED; color: #1C1C1E; font-weight: 500; } .ds-nav-item.active svg { color: #007AFF; }"
+    },
+    {
+      "name": "Task Item",
+      "kind": "custom",
+      "refersTo": "task-item",
+      "description": "A single task row with checkbox, title, and metadata.",
+      "html": "<li class=\"ds-task-item\"><input type=\"checkbox\" class=\"ds-checkbox\" /><div class=\"ds-task-content\"><span class=\"ds-task-title\">Buy groceries</span><div class=\"ds-task-meta\"><span class=\"ds-task-date\">Today</span></div></div></li>",
+      "css": ".ds-task-item { display: flex; align-items: flex-start; gap: 12px; padding: 9px 8px; border-radius: 8px; cursor: pointer; transition: background 150ms ease; } .ds-task-item:hover { background: #E8E8ED; } .ds-task-content { flex: 1; min-width: 0; } .ds-task-title { font-size: 14px; color: #1C1C1E; display: block; } .ds-task-title.completed { text-decoration: line-through; color: #AEAEB2; } .ds-task-meta { display: flex; gap: 8px; margin-top: 4px; } .ds-task-date { font-size: 11px; color: #8E8E93; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text input with bottom border only.",
+      "html": "<input type=\"text\" class=\"ds-input\" placeholder=\"New task...\" />",
+      "css": ".ds-input { width: 100%; padding: 4px 0; font-size: 14px; background: transparent; border: none; border-bottom: 1px solid #E5E5EA; outline: none; transition: border-color 150ms ease; } .ds-input:focus { border-bottom-color: #007AFF; } .ds-input::placeholder { color: #AEAEB2; }"
+    },
+    {
+      "name": "Dialog",
+      "kind": "custom",
+      "refersTo": "dialog",
+      "description": "Modal dialog with backdrop blur.",
+      "html": "<div class=\"ds-dialog-backdrop\"><div class=\"ds-dialog\"><h3 class=\"ds-dialog-title\">New Project</h3><input type=\"text\" class=\"ds-input\" placeholder=\"Project name\" /><div class=\"ds-dialog-actions\"><button class=\"ds-btn-ghost\">Cancel</button><button class=\"ds-btn-primary\">Create</button></div></div></div>",
+      "css": ".ds-dialog-backdrop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); z-index: 50; } .ds-dialog { background: #FFFFFF; border-radius: 12px; padding: 32px; width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); } .ds-dialog-title { font-size: 17px; font-weight: 600; color: #1C1C1E; margin-bottom: 24px; } .ds-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Blue fill button for primary actions.",
+      "html": "<button class=\"ds-btn-primary\">Create</button>",
+      "css": ".ds-btn-primary { padding: 8px 20px; font-size: 14px; font-weight: 500; background: #007AFF; color: #FFFFFF; border: none; border-radius: 8px; cursor: pointer; transition: opacity 150ms ease; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:active { opacity: 0.8; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Text-only button for secondary actions.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost { padding: 8px 20px; font-size: 14px; font-weight: 500; background: transparent; color: #8E8E93; border: none; border-radius: 8px; cursor: pointer; transition: color 150ms ease; } .ds-btn-ghost:hover { color: #1C1C1E; }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Notification toast with undo action.",
+      "html": "<div class=\"ds-toast\"><span class=\"ds-toast-message\">Task deleted</span><button class=\"ds-toast-action\">Undo</button></div>",
+      "css": ".ds-toast { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #1C1C1E; color: #FFFFFF; border-radius: 12px; font-size: 13px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); min-width: 300px; } .ds-toast-message { flex: 1; } .ds-toast-action { color: #007AFF; font-weight: 500; background: none; border: none; cursor: pointer; font-size: 13px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Focus Instrument",
+    "overview": "Things 4 is a precision tool for task management. Like a well-calibrated instrument, it provides exactly the feedback you need and nothing more. The interface recedes into the background, leaving only your tasks and the actions you can take on them. It rejects the busy, cluttered aesthetic of Todoist and the bare-bones minimalism of Google Tasks. It rejects the cream-and-gradient warmth of generic SaaS tools. Instead, it finds its identity in the clinical precision of Apple's design language: system fonts, iOS-standard colors, generous whitespace, and interactions that feel native to the platform.",
+    "keyCharacteristics": [
+      "System-native typography (SF Pro) with clear hierarchy through weight and size",
+      "Flat surfaces with tonal layering for depth (no shadows except on floating elements)",
+      "Generous whitespace that lets content breathe",
+      "Smooth, fluid transitions with subtle haptic-like feedback",
+      "iOS-standard color palette: blue accent, semantic red/green/yellow"
+    ],
+    "rules": [
+      { "name": "The 10% Accent Rule", "body": "The blue accent appears on less than 10% of any given screen. Its rarity creates visual hierarchy and prevents the interface from feeling 'blue-heavy.'", "section": "colors" },
+      { "name": "The One-Weight Rule", "body": "All text uses the same font family. Bold is reserved for display headings and active navigation items. Regular weight carries 90% of the interface.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows appear only on truly floating elements (dialogs, toasts) that脱离 the main layout.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use the system font stack (-apple-system, BlinkMacSystemFont) for all text",
+      "Do use whitespace as the primary separator between content blocks",
+      "Do keep the blue accent (#007AFF) under 10% of screen area",
+      "Do use the semantic colors exactly as defined: red for deadlines, yellow for today, green for completion",
+      "Do provide smooth, 150ms transitions on all interactive state changes",
+      "Do use 26px for screen titles, 14px for body text, 11px for metadata"
+    ],
+    "donts": [
+      "Don't use cream, sand, beige, or warm-tinted backgrounds",
+      "Don't add gradient text, glassmorphism, or decorative blur effects",
+      "Don't use border-left or border-right greater than 1px as a colored accent on list items",
+      "Don't use shadows on list items, cards, or content blocks",
+      "Don't pair two similar sans-serif font families",
+      "Don't animate layout properties (width, height, padding) unless truly necessary",
+      "Don't use border-radius greater than 12px on cards or dialogs"
+    ]
+  }
+}
